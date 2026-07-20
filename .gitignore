@@ -13,5 +13,5 @@ wheels/
 docs/
 
 # Opencode
-
 .opencode/
+AGENTS.md
