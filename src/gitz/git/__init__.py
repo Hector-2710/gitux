@@ -3,6 +3,8 @@
 from gitz.git.exceptions import GitError
 from gitz.git.commands import (
     commit,
+    get_branches,
+    get_commit_log,
     get_current_branch,
     get_file_diff,
     get_remote_status,
@@ -21,6 +23,8 @@ from gitz.git.commands import (
 __all__ = [
     "GitError",
     "commit",
+    "get_branches",
+    "get_commit_log",
     "get_current_branch",
     "get_file_diff",
     "get_remote_status",

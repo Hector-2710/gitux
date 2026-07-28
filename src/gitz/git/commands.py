@@ -204,6 +204,26 @@ def get_remote_status() -> RemoteStatus:
     )
 
 
+def get_branches() -> list[str]:
+    """Return list of local branch names from ``git branch``."""
+    result = _run(["branch"])
+    branches = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+    # Clean up: remove leading "* " from current branch
+    cleaned = []
+    for b in branches:
+        if b.startswith("* "):
+            cleaned.append(b[2:])
+        else:
+            cleaned.append(b)
+    return cleaned
+
+
+def get_commit_log(count: int = 30) -> str:
+    """Return the commit log with ASCII graph via ``git log --all --oneline --graph --decorate``."""
+    result = _run(["log", "--all", "--oneline", "--graph", "--decorate", f"-{count}"])
+    return result.stdout
+
+
 def is_detached_head() -> bool:
     """Return True if HEAD is detached."""
     try:
