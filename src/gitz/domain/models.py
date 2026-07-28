@@ -70,6 +70,13 @@ class RepoInfo:
 
 
 @dataclass(frozen=True)
+class CommitLogEntry:
+    """Represents a single entry in the commit log graph."""
+
+    raw_line: str          
+
+
+@dataclass(frozen=True)
 class RemoteStatus:
     """Current remote tracking status for the active branch."""
 
