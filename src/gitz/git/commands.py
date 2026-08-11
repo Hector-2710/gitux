@@ -1,9 +1,11 @@
 """Low-level git command wrappers using subprocess."""
 
+import os
 import subprocess
+from pathlib import Path
 from urllib.parse import urlparse
 
-from gitz.domain import FileStatus, PushResult, RemoteStatus, RepoInfo
+from gitz.domain import FileStatus, HeadSummary, OperationState, PushResult, RemoteStatus, RepoInfo
 from gitz.git.exceptions import GitError
 from gitz.git.parser import parse_push_output, parse_status
 
@@ -118,8 +120,11 @@ def push(remote: str = "origin", branch: str = "") -> PushResult:
 
 
 def get_current_branch() -> str:
-    """Return the name of the current branch."""
-    result = _run(["rev-parse", "--abbrev-ref", "HEAD"])
+    """Return the name of the current branch.
+
+    Empty repo -> "main" (exit 0); detached HEAD -> "" (exit 0).
+    """
+    result = _run(["branch", "--show-current"])
     return result.stdout.strip()
 
 
@@ -146,16 +151,43 @@ def _extract_repo_name(url: str) -> str:
     return name
 
 
+def _extract_owner(url: str) -> str:
+    """Extract the repository owner from a remote URL.
+
+    Handles:
+        https://github.com/Hector-2710/gitz.git  ->  Hector-2710   (urlparse path)
+        git@github.com:user/repo.git             ->  user          (":" split)
+        https://gitlab.com/group/subgroup/repo.git -> subgroup    (second-to-last segment)
+        fewer than 2 segments                    ->  ""
+    """
+    parsed = urlparse(url)
+    if parsed.scheme in ("https", "http"):
+        segments = [s for s in parsed.path.split("/") if s]
+        if len(segments) >= 2:
+            return segments[-2]
+        return ""
+
+    # SSH-style: git@github.com:user/repo.git
+    if ":" in url:
+        path_part = url.rsplit(":", 1)[-1]
+        segments = [s for s in path_part.split("/") if s]
+        if len(segments) >= 2:
+            return segments[-2]
+    return ""
+
+
 def get_repo_info() -> RepoInfo:
-    """Return repository identity (name + absolute working-tree path)."""
+    """Return repository identity (name + owner + absolute working-tree path)."""
     # Working tree root
     toplevel = _run(["rev-parse", "--show-toplevel"]).stdout.strip()
 
     # Try to get remote URL from origin, fallback to first remote
     name = ""
+    owner = ""
     try:
         url = _run(["remote", "get-url", "origin"]).stdout.strip()
         name = _extract_repo_name(url)
+        owner = _extract_owner(url)
     except GitError:
         # No origin — try any configured remote
         try:
@@ -164,10 +196,15 @@ def get_repo_info() -> RepoInfo:
             if remotes:
                 url = _run(["remote", "get-url", remotes[0]]).stdout.strip()
                 name = _extract_repo_name(url)
+                owner = _extract_owner(url)
         except GitError:
             pass
 
-    return RepoInfo(name=name, path=toplevel)
+    # No remote name — fall back to the working tree root basename
+    if not name and toplevel:
+        name = Path(toplevel).name
+
+    return RepoInfo(name=name, path=toplevel, owner=owner)
 
 
 def get_remote_status() -> RemoteStatus:
@@ -211,11 +248,16 @@ def get_branches() -> list[str]:
     # Clean up: remove leading "* " from current branch
     cleaned = []
     for b in branches:
-        if b.startswith("* "):
-            cleaned.append(b[2:])
-        else:
-            cleaned.append(b)
+        name = b[2:] if b.startswith("* ") else b
+        if name.startswith("("):
+            continue
+        cleaned.append(name)
     return cleaned
+
+
+def switch_branch(name: str) -> None:
+    """Switch to a local branch via ``git switch``. Raises GitError on failure."""
+    _run(["switch", name])
 
 
 def get_commit_log(count: int = 30) -> str:
@@ -233,19 +275,91 @@ def is_detached_head() -> bool:
         return True
 
 
+def _try_config(key: str) -> str:
+    """Return a git config value, or "" on any git error."""
+    try:
+        return _run(["config", "--get", key]).stdout.strip()
+    except GitError:
+        return ""
+
+
+def _os_login() -> str:
+    """Return the OS login name, falling back to $USER on failure."""
+    try:
+        return os.getlogin()
+    except OSError:
+        return os.environ.get("USER", "")
+
+
+def get_user() -> str:
+    """Return the configured git user (name -> email -> OS login). Never raises."""
+    name = _try_config("user.name")
+    if name:
+        return name
+    email = _try_config("user.email")
+    if email:
+        return email
+    return _os_login()
+
+
+def get_head_summary() -> HeadSummary | None:
+    """Return short hash, subject, and epoch of HEAD, or None when malformed.
+
+    ``GitError`` propagates for empty repos (exit 128) — the presenter converts.
+    """
+    result = _run(["log", "-1", "--format=%h%x09%s%x09%ct"])
+    parts = result.stdout.strip().split("\t")
+    if len(parts) < 3:
+        return None
+    try:
+        epoch = int(parts[2])
+    except ValueError:
+        return None
+    return HeadSummary(short_hash=parts[0], subject=parts[1], epoch=epoch)
+
+
+def get_default_branch() -> str:
+    """Return the default branch name from a single ``git branch -r`` call.
+
+    Parses stripped lines in order: an ``origin/HEAD -> origin/<name>`` line wins;
+    otherwise the ``origin/main``/``origin/master`` convention; else ``""``.
+    Never mutates, never touches the network.
+    """
+    result = _run(["branch", "-r"])
+    lines = [line.strip() for line in result.stdout.splitlines()]
+    for line in lines:
+        if line.startswith("origin/HEAD") and " -> " in line:
+            target = line.split(" -> ", 1)[-1].strip()
+            if target.startswith("origin/"):
+                return target[len("origin/"):]
+    if "origin/main" in lines:
+        return "main"
+    if "origin/master" in lines:
+        return "master"
+    return ""
+
+
+def get_git_dir() -> str:
+    """Return the git directory path via ``git rev-parse --git-dir``."""
+    return _run(["rev-parse", "--git-dir"]).stdout.strip()
+
+
+def get_operation_state() -> OperationState:
+    """Return merge/rebase in-progress flags from one shared git-dir lookup."""
+    git_dir = Path(get_git_dir())
+    return OperationState(
+        merge=(git_dir / "MERGE_HEAD").exists(),
+        rebase=(git_dir / "rebase-merge").exists()
+        or (git_dir / "rebase-apply").exists(),
+    )
+
+
 def is_merge_in_progress() -> bool:
     """Return True if a merge is in progress."""
-    from pathlib import Path
-
-    git_dir = Path(_run(["rev-parse", "--git-dir"]).stdout.strip())
-    return (git_dir / "MERGE_HEAD").exists()
+    return (Path(get_git_dir()) / "MERGE_HEAD").exists()
 
 
 def is_rebase_in_progress() -> bool:
     """Return True if a rebase is in progress."""
-    from pathlib import Path
-
-    git_dir = Path(_run(["rev-parse", "--git-dir"]).stdout.strip())
-    rebase_dir = git_dir / "rebase-merge"
-    rebase_apply = git_dir / "rebase-apply"
-    return rebase_dir.exists() or rebase_apply.exists()
+    git_dir = Path(get_git_dir())
+    return (git_dir / "rebase-merge").exists() or (git_dir / "rebase-apply").exists()
