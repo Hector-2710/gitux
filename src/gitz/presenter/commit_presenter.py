@@ -5,13 +5,12 @@ from gitz.git import (
     GitError,
     commit as git_commit,
     get_file_diff,
+    get_operation_state,
     get_remote_status,
     get_staged_diff,
     get_staged_file_diff,
     get_status,
     is_detached_head,
-    is_merge_in_progress,
-    is_rebase_in_progress,
     push as git_push,
     stage as git_stage,
     unstage as git_unstage,
@@ -87,7 +86,8 @@ class CommitPresenter:
 
     def can_commit(self) -> bool:
         """Whether commit action is allowed."""
-        if is_detached_head() or is_merge_in_progress() or is_rebase_in_progress():
+        state = get_operation_state()               # ONE call (was is_merge + is_rebase)
+        if is_detached_head() or state.in_progress:  # 2 subprocesses total (was 3)
             return False
         return len(self.staged_files) > 0
 
