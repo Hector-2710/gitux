@@ -1,16 +1,17 @@
 """Domain models for GITZ."""
 
 from dataclasses import dataclass, field
+from enum import Enum
 
 
 @dataclass(frozen=True)
 class FileStatus:
     """Represents the status of a single file in the working tree."""
 
-    index_status: str       # X from porcelain: M, A, D, R, C, ?, !
-    worktree_status: str    # Y from porcelain: M, D, ?, space
-    path: str               # File path relative to repo root
-    old_path: str | None    # Original path for renames/copies
+    index_status: str       
+    worktree_status: str    
+    path: str               
+    old_path: str | None    
 
     @property
     def is_staged(self) -> bool:
@@ -60,13 +61,101 @@ class PushResult:
 class RepoInfo:
     """Repository identity extracted from the local clone."""
 
-    name: str       # e.g. "gitz" (last segment of remote URL)
-    path: str       # absolute path to the working tree root
+    name: str       
+    path: str       
+    owner: str = "" 
 
     @property
     def display_name(self) -> str:
         """Human-friendly name for the header."""
         return self.name or "(no name)"
+
+
+@dataclass(frozen=True)
+class HeadSummary:
+    """Short hash, subject, and epoch-seconds of the HEAD commit (batched log output)."""
+
+    short_hash: str
+    subject: str
+    epoch: int
+
+
+@dataclass(frozen=True)
+class FileCounts:
+    """Partition of the working-tree file count (conflicts excluded from other buckets)."""
+
+    staged: int
+    modified: int
+    untracked: int
+    conflicts: int
+
+    @classmethod
+    def from_status(cls, files: list[FileStatus]) -> "FileCounts":
+        """Partition a status list into staged/modified/untracked/conflicts."""
+
+        staged = modified = untracked = conflicts = 0
+        for f in files:
+            if (
+                f.index_status == "U"
+                or f.worktree_status == "U"
+                or (f.index_status == "A" and f.worktree_status == "A")
+                or (f.index_status == "D" and f.worktree_status == "D")
+            ):
+                conflicts += 1
+            elif f.index_status == "?":
+                untracked += 1
+            elif f.is_staged:
+                staged += 1
+            elif f.worktree_status != " ":
+                modified += 1
+            else:
+                modified += 1
+        return cls(
+            staged=staged,
+            modified=modified,
+            untracked=untracked,
+            conflicts=conflicts,
+        )
+
+
+@dataclass(frozen=True)
+class OperationState:
+    """Merge/rebase in-progress flags from one shared git-dir lookup."""
+
+    merge: bool
+    rebase: bool
+
+    @property
+    def in_progress(self) -> bool:
+        """True if a merge or rebase is currently in progress."""
+        return self.merge or self.rebase
+
+
+class WipState(Enum):
+    """Work-in-progress state rendered as a single colored dot on the top bar."""
+
+    UNKNOWN = "unknown"     
+    CLEAN = "clean"         
+    DIRTY = "dirty"         
+    CONFLICT = "conflict"   
+
+
+def derive_wip_state(file_counts: FileCounts, operation: OperationState | None, has_commits: bool,) -> WipState:
+    """Derive the WIP dot state with locked precedence CONFLICT > UNKNOWN > DIRTY > CLEAN."""
+
+    if operation is None:
+        return WipState.UNKNOWN
+    if operation.in_progress or file_counts.conflicts > 0:
+        return WipState.CONFLICT
+    if not has_commits:
+        return WipState.UNKNOWN
+    if (
+        file_counts.staged > 0
+        or file_counts.modified > 0
+        or file_counts.untracked > 0
+    ):
+        return WipState.DIRTY
+    return WipState.CLEAN
 
 
 @dataclass(frozen=True)
