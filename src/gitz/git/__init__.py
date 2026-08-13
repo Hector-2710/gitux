@@ -1,9 +1,10 @@
-"""Git infrastructure layer — subprocess wrappers and porcelain parsing."""
+"""Git infrastructure layer."""
 
 from gitz.git.exceptions import GitError
 from gitz.git.commands import (
     commit,
     get_branches,
+    get_commit_details,
     get_commit_log,
     get_current_branch,
     get_default_branch,
@@ -16,6 +17,7 @@ from gitz.git.commands import (
     get_staged_diff,
     get_staged_file_diff,
     get_status,
+    get_untracked_file_diff,
     get_user,
     is_detached_head,
     is_merge_in_progress,
@@ -30,6 +32,7 @@ __all__ = [
     "GitError",
     "commit",
     "get_branches",
+    "get_commit_details",
     "get_commit_log",
     "get_current_branch",
     "get_default_branch",
@@ -42,6 +45,7 @@ __all__ = [
     "get_staged_diff",
     "get_staged_file_diff",
     "get_status",
+    "get_untracked_file_diff",
     "get_user",
     "is_detached_head",
     "is_merge_in_progress",

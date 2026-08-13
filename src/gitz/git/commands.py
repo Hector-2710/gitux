@@ -1,4 +1,4 @@
-"""Low-level git command wrappers using subprocess."""
+"""Low-level git command wrappers."""
 
 import os
 import subprocess
@@ -9,8 +9,8 @@ from gitz.domain import FileStatus, HeadSummary, OperationState, PushResult, Rem
 from gitz.git.exceptions import GitError
 from gitz.git.parser import parse_push_output, parse_status
 
-_TIMEOUT = 30  # seconds for most operations
-_PUSH_TIMEOUT = 60  # seconds for push (network I/O)
+_TIMEOUT = 30  
+_PUSH_TIMEOUT = 60  
 
 
 def _run(args: list[str], *, timeout: int = _TIMEOUT) -> subprocess.CompletedProcess[str]:
@@ -79,6 +79,42 @@ def get_staged_file_diff(path: str) -> str:
         return ""
 
 
+def _run_tolerant(args: list[str], *, allowed_return_codes: set[int], timeout: int = _TIMEOUT) -> subprocess.CompletedProcess[str]:
+    """Run git, treating allowed_return_codes as success. Raises GitError otherwise."""
+    try:
+        result = subprocess.run(
+            ["git", *args], 
+            capture_output=True, 
+            text=True, 
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise GitError(f"Git command timed out after {timeout}s") from exc
+    except FileNotFoundError as exc:
+        raise GitError("git is not installed or not found on PATH") from exc
+    if result.returncode not in allowed_return_codes:
+        raise GitError(
+            f"git {' '.join(args[:3])} failed (exit {result.returncode})",
+            stderr=result.stderr.strip(),
+        )
+    return result
+
+
+def get_untracked_file_diff(path: str) -> str:
+    """Unified diff of an untracked file vs /dev/null; "" for binary or empty files."""
+    try:
+        result = _run_tolerant(
+            ["diff", "--no-index", "/dev/null", path], allowed_return_codes={0, 1},
+        )
+    except GitError:
+        return ""
+    if "Binary files" in result.stdout:      
+        return ""
+    if not any(line.startswith("@@") for line in result.stdout.splitlines()):
+        return ""                            
+    return result.stdout
+
+
 def commit(message: str) -> str:
     """Create a commit with the given message. Returns the short hash."""
     _run(["commit", "-m", message])
@@ -129,22 +165,13 @@ def get_current_branch() -> str:
 
 
 def _extract_repo_name(url: str) -> str:
-    """Extract the repository name from a remote URL.
-
-    Handles:
-        https://github.com/user/gitz.git  →  gitz
-        git@github.com:user/gitz.git      →  gitz
-        https://github.com/user/gitz      →  gitz
-    """
-    # Try urlparse first (works for https:// and http://)
+    """Extract the repository name from a remote URL."""
     parsed = urlparse(url)
     if parsed.path:
         name = parsed.path.rsplit("/", 1)[-1]
     else:
-        # SSH-style: git@github.com:user/repo.git
         name = url.rsplit("/", 1)[-1]
 
-    # Strip trailing .git
     if name.endswith(".git"):
         name = name[:-4]
 
@@ -152,14 +179,7 @@ def _extract_repo_name(url: str) -> str:
 
 
 def _extract_owner(url: str) -> str:
-    """Extract the repository owner from a remote URL.
-
-    Handles:
-        https://github.com/Hector-2710/gitz.git  ->  Hector-2710   (urlparse path)
-        git@github.com:user/repo.git             ->  user          (":" split)
-        https://gitlab.com/group/subgroup/repo.git -> subgroup    (second-to-last segment)
-        fewer than 2 segments                    ->  ""
-    """
+    """Extract the repository owner from a remote URL."""
     parsed = urlparse(url)
     if parsed.scheme in ("https", "http"):
         segments = [s for s in parsed.path.split("/") if s]
@@ -167,7 +187,6 @@ def _extract_owner(url: str) -> str:
             return segments[-2]
         return ""
 
-    # SSH-style: git@github.com:user/repo.git
     if ":" in url:
         path_part = url.rsplit(":", 1)[-1]
         segments = [s for s in path_part.split("/") if s]
@@ -178,10 +197,8 @@ def _extract_owner(url: str) -> str:
 
 def get_repo_info() -> RepoInfo:
     """Return repository identity (name + owner + absolute working-tree path)."""
-    # Working tree root
     toplevel = _run(["rev-parse", "--show-toplevel"]).stdout.strip()
 
-    # Try to get remote URL from origin, fallback to first remote
     name = ""
     owner = ""
     try:
@@ -189,7 +206,6 @@ def get_repo_info() -> RepoInfo:
         name = _extract_repo_name(url)
         owner = _extract_owner(url)
     except GitError:
-        # No origin — try any configured remote
         try:
             result = _run(["remote"])
             remotes = result.stdout.strip().splitlines()
@@ -200,7 +216,6 @@ def get_repo_info() -> RepoInfo:
         except GitError:
             pass
 
-    # No remote name — fall back to the working tree root basename
     if not name and toplevel:
         name = Path(toplevel).name
 
@@ -211,7 +226,6 @@ def get_remote_status() -> RemoteStatus:
     """Return ahead/behind counts and tracking info for the current branch."""
     branch = get_current_branch()
 
-    # Try to get tracking branch
     try:
         result = _run([
             "rev-parse", "--abbrev-ref", f"{branch}@{{upstream}}"
@@ -221,7 +235,6 @@ def get_remote_status() -> RemoteStatus:
     except GitError:
         return RemoteStatus(remote="", branch=branch, ahead=0, behind=0)
 
-    # Get ahead/behind counts
     try:
         result = _run([
             "rev-list", "--left-right", "--count",
@@ -245,7 +258,6 @@ def get_branches() -> list[str]:
     """Return list of local branch names from ``git branch``."""
     result = _run(["branch"])
     branches = [line.strip() for line in result.stdout.splitlines() if line.strip()]
-    # Clean up: remove leading "* " from current branch
     cleaned = []
     for b in branches:
         name = b[2:] if b.startswith("* ") else b
@@ -263,6 +275,17 @@ def switch_branch(name: str) -> None:
 def get_commit_log(count: int = 30) -> str:
     """Return the commit log with ASCII graph via ``git log --all --oneline --graph --decorate``."""
     result = _run(["log", "--all", "--oneline", "--graph", "--decorate", f"-{count}"])
+    return result.stdout
+
+
+_COMMIT_DETAILS_FORMAT = "%h %an <%ae>%n%ad%n%n%s%n%n%b"
+
+
+def get_commit_details(commit_hash: str) -> str:
+    """Return commit metadata + --stat summary via `git show`. Raises GitError on failure."""
+    result = _run([
+        "show", f"--format={_COMMIT_DETAILS_FORMAT}", "--stat", "--date=iso", commit_hash,
+    ])
     return result.stdout
 
 
