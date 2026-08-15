@@ -4,6 +4,7 @@ from gitz.domain import HeadSummary, OperationState, RemoteStatus, RepoInfo
 from gitz.git import (
     GitError,
     get_branches as git_get_branches,
+    get_commit_details as git_get_commit_details,
     get_current_branch,
     get_commit_log as git_get_commit_log,
     get_default_branch as git_get_default_branch,
@@ -54,6 +55,13 @@ class RepoPresenter:
         """Return the ASCII commit log graph, or empty string on error."""
         try:
             return git_get_commit_log(count)
+        except GitError:
+            return ""
+
+    def get_commit_details(self, commit_hash: str) -> str:
+        """Return commit detail text (hash/author/date/subject/body/stat), or "" on error."""
+        try:
+            return git_get_commit_details(commit_hash)
         except GitError:
             return ""
 
