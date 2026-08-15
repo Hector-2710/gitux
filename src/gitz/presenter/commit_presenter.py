@@ -10,6 +10,7 @@ from gitz.git import (
     get_staged_diff,
     get_staged_file_diff,
     get_status,
+    get_untracked_file_diff,
     is_detached_head,
     push as git_push,
     stage as git_stage,
@@ -47,9 +48,11 @@ class CommitPresenter:
         git_unstage(paths)
 
     def get_diff(self, file_status: FileStatus) -> str:
-        """Get diff for a file. Uses staged diff if staged, unstaged otherwise."""
+        """Get diff for a file."""
         if file_status.is_staged:
             return get_staged_file_diff(file_status.path)
+        if file_status.index_status == "?" or file_status.worktree_status == "?":
+            return get_untracked_file_diff(file_status.path)
         return get_file_diff(file_status.path)
 
     def get_staged_preview(self) -> str:
@@ -86,8 +89,8 @@ class CommitPresenter:
 
     def can_commit(self) -> bool:
         """Whether commit action is allowed."""
-        state = get_operation_state()               # ONE call (was is_merge + is_rebase)
-        if is_detached_head() or state.in_progress:  # 2 subprocesses total (was 3)
+        state = get_operation_state()               
+        if is_detached_head() or state.in_progress:  
             return False
         return len(self.staged_files) > 0
 
