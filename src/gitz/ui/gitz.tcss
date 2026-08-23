@@ -1,0 +1,323 @@
+Screen {
+    background: #13131b;
+}
+
+* {
+    color: #e4e1ed;
+}
+
+#top-bar {
+    dock: top;
+    height: 1;
+    background: #1f1f27;
+    color: #e4e1ed;
+    padding: 0 1;
+    text-style: bold;
+}
+
+#stats-bar {
+    dock: top;
+    height: 1;
+    background: #1f1f27;
+    color: #c7c4d7;
+    padding: 0 1;
+}
+
+#main-content {
+    height: 1fr;
+    layout: vertical;
+}
+
+#bento-top {
+    height: 1fr;
+    layout: horizontal;
+}
+
+#files-block {
+    width: 1fr;
+    min-width: 30;
+}
+
+#commits-block {
+    height: 1fr;
+}
+
+#commit-log {
+    height: 1fr;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 1;
+    color: #e4e1ed;
+    background: transparent;
+    scrollbar-visibility: hidden;
+}
+
+.block-active {
+    border: solid #c0c1ff;
+    background: #0d0d15;
+}
+
+.block-inactive {
+    border: solid #464554;
+    background: #0d0d15;
+}
+
+.block-header {
+    height: 1;
+    background: #34343d;
+    padding: 0 1;
+    text-style: bold;
+}
+
+.block-active .block-header {
+    color: #e4e1ed;
+}
+
+.block-inactive .block-header {
+    color: #c7c4d7;
+}
+
+#changed-files {
+    height: 1fr;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 1;
+    background: transparent;
+    scrollbar-visibility: hidden;
+}
+
+.staged-section {
+    color: #c0c1ff;
+}
+
+.unstaged-section {
+    color: #ffb783;
+}
+
+.file-status-M { color: #ffb783; }
+.file-status-A { color: #10b981; }
+.file-status-D { color: #ffb4ab; }
+.file-status-R { color: #c0c1ff; }
+.file-status-C { color: #c0c1ff; }
+.file-status-unknown { color: #908fa0; }
+
+#diff-viewer {
+    height: 1fr;
+    overflow-y: auto;
+    padding: 0 1;
+    background: transparent;
+    scrollbar-visibility: hidden;
+}
+
+GitzFooter {
+    dock: bottom;
+    height: 1;
+    background: #1f1f27;
+    color: #c7c4d7;
+    padding: 0 1;
+}
+
+#commit-modal {
+    background: #34343d;
+    border: solid #c0c1ff;
+    color: #e4e1ed;
+    width: 60%;
+    height: 13;
+}
+
+#help-container {
+    background: #34343d;
+    border: solid #c0c1ff;
+    color: #e4e1ed;
+    width: 64;
+    max-width: 90%;
+    max-height: 85%;
+    padding: 1 2;
+    overflow-y: auto;
+}
+
+#help-title {
+    text-style: bold;
+    color: #c0c1ff;
+    text-align: center;
+    margin: 0 0 1 0;
+    content-align: center middle;
+    height: 1;
+}
+
+#help-body {
+    color: #e4e1ed;
+}
+
+#help-body .key {
+    color: #ffb783;
+    text-style: bold;
+}
+
+#help-close-hint {
+    text-style: italic;
+    color: #c7c4d7;
+    text-align: center;
+    margin: 1 0 0 0;
+    height: 1;
+}
+
+CommitScreen {
+    background: #13131b 85%;
+    align: center middle;
+    height: 13;
+}
+
+#commit-modal-type {
+    height: 1;
+    text-align: center;
+    color: #ffb783;
+    margin: 0 0 1 0;
+}
+
+#commit-modal-title {
+    text-style: bold;
+    color: #c0c1ff;
+    margin: 0 0 1 0;
+    height: 1;
+    text-align: center;
+}
+
+#commit-modal-input {
+    width: 100%;
+    height: 3;
+    background: #1f1f27;
+    color: #e4e1ed;
+    border: solid #464554;
+    padding: 0 1;
+    margin: 0 0 1 0;
+}
+
+#commit-modal-input:focus {
+    border: solid #c0c1ff;
+}
+
+#commit-modal-input .input--cursor {
+    color: #13131b;
+    background: #c0c1ff;
+}
+
+#commit-modal-buttons {
+    layout: horizontal;
+    height: 3;
+    align: center middle;
+}
+
+#commit-modal-btn-commit {
+    width: 16;
+    min-width: 16;
+    max-width: 16;
+    margin: 0 1 0 0;
+    background: #10b981;
+    color: #0d0d15;
+    text-style: bold;
+    border: none;
+}
+
+#commit-modal-btn-commit:hover {
+    background: #34d399;
+}
+
+#commit-modal-btn-commit:disabled {
+    background: #1f1f27;
+    color: #c7c4d7;
+}
+
+#commit-modal-btn-cancel {
+    width: 16;
+    min-width: 16;
+    max-width: 16;
+    background: transparent;
+    color: #908fa0;
+    text-style: bold;
+    border: none;
+}
+
+#commit-modal-btn-cancel:hover {
+    background: #1f1f27;
+    color: #e4e1ed;
+}
+
+HelpScreen {
+    background: #13131b 80%;
+    align: center middle;
+}
+
+BranchScreen {
+    background: #13131b 85%;
+    align: center middle;
+}
+
+#branch-modal {
+    background: #34343d;
+    border: solid #c0c1ff;
+    color: #e4e1ed;
+    width: 50;
+    max-width: 90%;
+    height: auto;
+    padding: 1 2;
+}
+
+#branch-modal-title {
+    text-style: bold;
+    color: #c0c1ff;
+    text-align: center;
+    height: 1;
+    margin: 0 0 1 0;
+}
+
+#branch-option-list {
+    background: #1f1f27;
+    color: #e4e1ed;
+    border: solid #464554;
+    height: auto;
+    max-height: 60%;
+}
+
+#branch-option-list > .option-list--option-highlighted {
+    background: #3a4a5f;
+    color: #e4e1ed;
+}
+
+#branch-modal-hint {
+    text-style: italic;
+    color: #c7c4d7;
+    text-align: center;
+    height: 1;
+    margin: 1 0 0 0;
+}
+
+Toast {
+    background: #1f1f27;
+    border: solid #464554;
+    padding: 0 1;
+}
+
+Toast.-information {
+    border: solid #10b981;
+}
+
+Toast.-information .toast-title {
+    color: #10b981;
+}
+
+Toast.-error {
+    border: solid #ffb4ab;
+}
+
+Toast.-error .toast-title {
+    color: #ffb4ab;
+}
+
+Toast.-warning {
+    border: solid #ffb783;
+}
+
+Toast.-warning .toast-title {
+    color: #ffb783;
+}
