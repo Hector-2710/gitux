@@ -1,0 +1,446 @@
+import unittest.mock
+
+import pytest
+from textual.css.query import NoMatches
+from textual.widgets import Button
+
+from gitux.domain import FileStatus, HeadSummary, OperationState, RepoInfo
+from gitux.ui.app import GituxApp
+from gitux.ui.widgets import RepoStatsBar
+
+
+@pytest.mark.asyncio
+async def test_app_mounts_without_error():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        assert app.query_one("#top-bar") is not None
+        assert app.query_one("#stats-bar") is not None
+        assert isinstance(app.query_one("#stats-bar"), RepoStatsBar)
+        assert app.query_one("#main-content") is not None
+        assert app.query_one("#bento-top") is not None
+        assert app.query_one("#files-block") is not None
+        assert app.query_one("#commits-block") is not None
+        assert app.query_one("#diff-block") is not None
+        assert app.query_one("#changed-files") is not None
+        assert app.query_one("#commit-log") is not None
+        assert app.query_one("#diff-viewer") is not None
+        assert app.query_one("GituxFooter") is not None
+        with pytest.raises(NoMatches):
+            app.query_one("#sidebar")
+        with pytest.raises(NoMatches):
+            app.query_one("#workspace")
+
+
+@pytest.mark.asyncio
+async def test_files_block_active_on_mount_and_no_focus():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        # The "files" block should be active after mount
+        assert app._active_block == "files"
+        # Focus is deliberately cleared so buttons don't intercept keys
+        assert app.screen.focused is None
+
+
+@pytest.mark.asyncio
+async def test_header_displays_loading_state():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        header = app.query_one("#top-bar")
+        assert header is not None
+
+
+@pytest.mark.asyncio
+async def test_commit_screen_opens_on_c():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        await pilot.press("c")
+        assert app.screen.__class__.__name__ == "CommitScreen"
+        commit_input = app.screen.query_one("#commit-modal-input")
+        assert commit_input.has_focus
+
+
+@pytest.mark.asyncio
+async def test_commit_screen_cancels_on_escape():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        await pilot.press("c")
+        assert app.screen.__class__.__name__ == "CommitScreen"
+        await pilot.press("escape")
+        assert app.screen.__class__.__name__ != "CommitScreen"
+
+
+@pytest.mark.asyncio
+async def test_commit_modal_shows_exact_button_labels():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        await pilot.press("c")
+        await pilot.pause()
+        assert app.screen.__class__.__name__ == "CommitScreen"
+        commit_btn = app.screen.query_one("#commit-modal-btn-commit", Button)
+        cancel_btn = app.screen.query_one("#commit-modal-btn-cancel", Button)
+        assert commit_btn.label.plain == "Commit (Enter)"
+        assert cancel_btn.label.plain == "Cancel (Esc)"
+
+
+@pytest.mark.asyncio
+async def test_enter_in_commit_modal_empty_input_no_toggle():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        _seed_files(app)
+        await pilot.press("c")
+        await pilot.pause()
+        assert app.screen.__class__.__name__ == "CommitScreen"
+        changed_files = app.query_one("#changed-files")
+        cursor_before = changed_files._cursor_index
+        with unittest.mock.patch.object(app, "notify") as mock_notify:
+            await pilot.press("enter")
+        assert changed_files._cursor_index == cursor_before
+        assert app._active_block == "files"
+        assert app.screen.__class__.__name__ == "CommitScreen"
+        assert mock_notify.call_count == 1
+        assert "cannot be empty" in mock_notify.call_args[0][0]
+
+
+@pytest.mark.asyncio
+async def test_tab_cycles_three_blocks():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        assert app._active_block == "files"
+        await pilot.press("tab")
+        assert app._active_block == "commits"
+        await pilot.press("tab")
+        assert app._active_block == "diff"
+        await pilot.press("tab")
+        assert app._active_block == "files"
+
+
+@pytest.mark.asyncio
+async def test_branch_screen_opens_on_b():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        await pilot.press("b")
+        assert app.screen.__class__.__name__ == "BranchScreen"
+        assert app.screen.query_one("#branch-option-list") is not None
+
+
+@pytest.mark.asyncio
+async def test_branch_screen_cancels_on_escape():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        await pilot.press("b")
+        assert app.screen.__class__.__name__ == "BranchScreen"
+        await pilot.press("escape")
+        assert app.screen.__class__.__name__ != "BranchScreen"
+
+
+@pytest.mark.asyncio
+async def test_changed_files_autoscrolls_on_cursor_down():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        files = [
+            FileStatus(" ", "M", f"src/file_{i:03d}.py", None) for i in range(100)
+        ]
+        with unittest.mock.patch(
+            "gitux.presenter.commit_presenter.get_status", return_value=files
+        ):
+            app._refresh_all()
+        for _ in range(30):
+            await pilot.press("down")
+        changed_files = app.query_one("#changed-files")
+        assert changed_files.scroll_y > 0
+
+
+@pytest.mark.asyncio
+async def test_refresh_all_wires_new_bar_data():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        with unittest.mock.patch.object(app.repo, "get_user", return_value="hector"), \
+            unittest.mock.patch.object(app.repo, "get_head_summary", return_value=None), \
+            unittest.mock.patch.object(app.repo, "get_default_branch", return_value=""), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_repo_info",
+                return_value=RepoInfo(name="gitux", path="/home/user/gitux"),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_operation_state",
+                return_value=OperationState(False, False),
+            ):
+            app._refresh_all()
+        stats = app.query_one("#stats-bar")
+        header = app.query_one("#top-bar")
+        assert stats.content.plain.startswith(
+            " \u25a0 REPO STATS \u2502 gitux \u2502 hector \u2502 (no commits) \u2502 "
+        )
+        assert " \u25cf" in header.content.plain  # WIP dot always present
+
+
+@pytest.mark.asyncio
+async def test_refresh_all_without_repo_info_omits_repo_segment():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        with unittest.mock.patch.object(app.repo, "get_user", return_value="hector"), \
+            unittest.mock.patch.object(app.repo, "get_head_summary", return_value=None), \
+            unittest.mock.patch.object(app.repo, "get_default_branch", return_value=""), \
+            unittest.mock.patch.object(app.repo, "get_repo_info", return_value=None), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_operation_state",
+                return_value=OperationState(False, False),
+            ):
+            app._refresh_all()
+        stats = app.query_one("#stats-bar")
+        assert stats.content.plain.startswith(
+            " \u25a0 REPO STATS \u2502 hector \u2502 "
+        )
+        assert "gitux" not in stats.content.plain
+
+
+def _seed_files(app, count: int = 30) -> None:
+    files = [
+        FileStatus(" ", "M", f"src/file_{i:03d}.py", None) for i in range(count)
+    ]
+    with unittest.mock.patch(
+        "gitux.presenter.commit_presenter.get_status", return_value=files
+    ):
+        app._refresh_all()
+
+
+_GRAPH_LOG = "* c4474af feat: initial\n|"
+_DETAIL_TEXT = "\n".join(f"detail line {i}" for i in range(60))
+
+
+def _seed_commit_log(app, graph_text: str) -> None:
+    with unittest.mock.patch.object(
+        app.repo, "get_commit_log", return_value=graph_text
+    ), unittest.mock.patch(
+        "gitux.presenter.commit_presenter.get_status", return_value=[]
+    ):
+        app._refresh_all()
+
+
+@pytest.mark.asyncio
+async def test_commit_enter_opens_detail():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        _seed_commit_log(app, _GRAPH_LOG)
+        with unittest.mock.patch.object(
+            app.repo,
+            "get_commit_details",
+            return_value="c4474af Jane Doe <j@x>\n\nfeat: initial",
+        ):
+            await pilot.press("tab")
+            await pilot.press("enter")
+        log = app.query_one("#commit-log")
+        assert log.is_detail_mode is True
+        assert "c4474af Jane Doe" in log._detail_text
+
+
+@pytest.mark.asyncio
+async def test_commit_escape_exits_detail():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        _seed_commit_log(app, _GRAPH_LOG)
+        with unittest.mock.patch.object(
+            app.repo, "get_commit_details", return_value="detail"
+        ):
+            await pilot.press("tab")
+            await pilot.press("enter")
+        log = app.query_one("#commit-log")
+        assert log.is_detail_mode is True
+        await pilot.press("escape")
+        assert log.is_detail_mode is False
+        assert log._detail_text is None
+
+
+@pytest.mark.asyncio
+async def test_enter_on_graph_line_no_detail():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        _seed_commit_log(app, "* c4474af feat: initial\n|")
+        with unittest.mock.patch.object(
+            app.repo, "get_commit_details"
+        ) as mock_details:
+            await pilot.press("tab")
+            await pilot.press("down")
+            await pilot.press("enter")
+        log = app.query_one("#commit-log")
+        assert log.is_detail_mode is False
+        mock_details.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_enter_with_empty_details_is_noop():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        _seed_commit_log(app, _GRAPH_LOG)
+        with unittest.mock.patch.object(
+            app.repo, "get_commit_details", return_value=""
+        ), unittest.mock.patch.object(app, "notify") as mock_notify:
+            await pilot.press("tab")
+            await pilot.press("enter")
+        log = app.query_one("#commit-log")
+        assert log.is_detail_mode is False
+        mock_notify.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_enter_twice_opens_detail_once():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        _seed_commit_log(app, _GRAPH_LOG)
+        with unittest.mock.patch.object(
+            app.repo, "get_commit_details", return_value="detail"
+        ) as mock_details:
+            await pilot.press("tab")
+            await pilot.press("enter")
+            await pilot.press("enter")
+        log = app.query_one("#commit-log")
+        assert log.is_detail_mode is True
+        mock_details.assert_called_once_with("c4474af")
+
+
+@pytest.mark.asyncio
+async def test_refresh_exits_detail_mode():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        _seed_commit_log(app, _GRAPH_LOG)
+        with unittest.mock.patch.object(
+            app.repo, "get_commit_details", return_value="detail"
+        ):
+            await pilot.press("tab")
+            await pilot.press("enter")
+        log = app.query_one("#commit-log")
+        assert log.is_detail_mode is True
+        await pilot.press("r")
+        assert log.is_detail_mode is False
+
+
+@pytest.mark.asyncio
+async def test_detail_mode_down_scrolls_without_cursor_move():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        _seed_commit_log(app, _GRAPH_LOG)
+        with unittest.mock.patch.object(
+            app.repo, "get_commit_details", return_value=_DETAIL_TEXT
+        ):
+            await pilot.press("tab")
+            await pilot.press("enter")
+        log = app.query_one("#commit-log")
+        assert log.is_detail_mode is True
+        cursor_before = log._cursor_index
+        y0 = log.scroll_y
+        await pilot.press("down")
+        assert log.scroll_y > y0
+        assert log._cursor_index == cursor_before
+
+
+@pytest.mark.asyncio
+async def test_modal_open_branch_arrows_do_not_scroll_files():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        _seed_files(app)
+        with unittest.mock.patch.object(
+            app.repo, "get_branches", return_value=["a", "b", "c"]
+        ):
+            await pilot.press("b")
+        await pilot.pause()
+        assert app.screen.__class__.__name__ == "BranchScreen"
+        changed_files = app.query_one("#changed-files")
+        option_list = app.screen.query_one("#branch-option-list")
+        assert changed_files._cursor_index == 0
+        assert changed_files.scroll_y == 0
+        for _ in range(3):
+            await pilot.press("down")
+        assert changed_files._cursor_index == 0
+        assert changed_files.scroll_y == 0
+        assert option_list.highlighted == 2
+
+
+@pytest.mark.asyncio
+async def test_modal_open_commit_keys_do_not_move_panels():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        _seed_files(app)
+        await pilot.press("c")
+        await pilot.pause()
+        assert app.screen.__class__.__name__ == "CommitScreen"
+        changed_files = app.query_one("#changed-files")
+        assert changed_files._cursor_index == 0
+        assert app._block_index == 0
+        assert app._active_block == "files"
+        for key in ("down", "up", "tab"):
+            await pilot.press(key)
+        assert changed_files._cursor_index == 0
+        assert app._block_index == 0
+        assert app._active_block == "files"
+
+
+@pytest.mark.asyncio
+async def test_modal_open_tab_does_not_cycle_blocks():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        await pilot.press("b")
+        await pilot.pause()
+        assert app.screen.__class__.__name__ == "BranchScreen"
+        assert app._block_index == 0
+        await pilot.press("tab")
+        assert app._block_index == 0
+        assert app._active_block == "files"
+
+
+@pytest.mark.asyncio
+async def test_blocks_bordered_and_aligned_at_mount():
+    app = GituxApp()
+    async with app.run_test(size=(100, 40)) as pilot:
+        for block_id in ("#files-block", "#commits-block", "#diff-block"):
+            block = app.query_one(block_id)
+            assert len(block.classes & {"block-active", "block-inactive"}) == 1
+            assert block.styles.border.top[0] == "solid"
+        files_header = app.query_one("#files-block").query_one(".block-header")
+        commits_header = app.query_one("#commits-block").query_one(".block-header")
+        diff_header = app.query_one("#diff-block").query_one(".block-header")
+        assert files_header.region.y == commits_header.region.y
+        assert files_header.region.y == 2
+        assert commits_header.region.y == 2
+        assert diff_header.region.y == 21
+
+
+@pytest.mark.asyncio
+async def test_commits_block_has_no_scrollbar_and_log_scrolls():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        block = app.query_one("#commits-block")
+        assert block.show_vertical_scrollbar is False
+        assert block.max_scroll_y == 0
+        log = app.query_one("#commit-log")
+        assert log.styles.scrollbar_visibility == "hidden"
+        assert log.show_vertical_scrollbar is False
+        log.show_log("\n".join(f"* {i:07x} msg {i}" for i in range(80)))
+        await pilot.press("tab")
+        await pilot.press("down")
+        assert app.query_one("#commit-log").scroll_y > 0
+        assert block.max_scroll_y == 0
+
+
+@pytest.mark.asyncio
+async def test_refresh_all_wires_head_hash():
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        with unittest.mock.patch.object(app.repo, "get_user", return_value=""), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_head_summary",
+                return_value=HeadSummary("66f7291", "feat: x", 1785784746),
+            ), \
+            unittest.mock.patch.object(app.repo, "get_default_branch", return_value=""), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_operation_state",
+                return_value=OperationState(False, False),
+            ):
+            app._refresh_all()
+        stats = app.query_one("#stats-bar")
+        assert "feat: x" in stats.content.plain
+        assert "66f7291" not in stats.content.plain
