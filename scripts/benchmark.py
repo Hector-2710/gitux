@@ -1,4 +1,4 @@
-"""External performance benchmark for GITZ.
+"""External performance benchmark for GITUX.
 
 Usage:
     uv run python scripts/benchmark.py
@@ -157,7 +157,7 @@ def _get_repo_info() -> tuple[str, str]:
 
 def _get_version() -> str:
     """Get app version from __init__.py."""
-    init_file = PROJECT_ROOT / "src" / "gitz" / "__init__.py"
+    init_file = PROJECT_ROOT / "src" / "gitux" / "__init__.py"
     try:
         content = init_file.read_text()
         for line in content.splitlines():
@@ -220,7 +220,7 @@ def _warmup_git_operations(runs: int) -> None:
 
 
 def benchmark_git_operations() -> list[GitOpResult]:
-    """Time all git operations that GITZ uses (single measured run)."""
+    """Time all git operations that GITUX uses (single measured run)."""
     results = []
     for args, name in _GIT_OPS:
         result = _run_git_timed(args)
@@ -230,10 +230,10 @@ def benchmark_git_operations() -> list[GitOpResult]:
 
 
 async def _run_app_headless() -> None:
-    """Run GitzApp in Textual headless mode (for startup measurement)."""
-    from gitz.ui.app import GitzApp
+    """Run GituxApp in Textual headless mode (for startup measurement)."""
+    from gitux.ui.app import GituxApp
 
-    app = GitzApp()
+    app = GituxApp()
     async with app.run_test(headless=True):
         pass
 
@@ -302,7 +302,7 @@ def generate_report(result: BenchmarkResult) -> str:
     """Generate markdown report from benchmark results."""
     lines = []
 
-    lines.append("# GITZ Performance Report")
+    lines.append("# GITUX Performance Report")
     lines.append("")
     lines.append("## Metadata")
     lines.append("")
@@ -367,7 +367,7 @@ def generate_report(result: BenchmarkResult) -> str:
 
 #  MAIN
 def main():
-    print("GITZ Performance Benchmark")
+    print("GITUX Performance Benchmark")
     print("=" * 40)
 
     result = benchmark_full_session()

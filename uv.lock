@@ -21,8 +21,7 @@ wheels = [
 ]
 
 [[package]]
-name = "gitz"
-version = "0.1.0"
+name = "gitux"
 source = { editable = "." }
 dependencies = [
     { name = "psutil" },

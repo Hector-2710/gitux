@@ -1,5 +1,5 @@
-"""Legacy entry point - use 'uv run gitz' instead."""
+"""Legacy entry point - use 'uv run gitux' instead."""
 
-from gitz.cli import app
+from gitux.cli import app
 
 app()
