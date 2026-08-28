@@ -16,3 +16,7 @@ DESIGN.md
 # Opencode
 .opencode/
 AGENTS.md
+
+# Metrics
+.scannerwork
+sonar-project.properties
