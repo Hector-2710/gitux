@@ -1,10 +1,12 @@
 """Repo stats bar — one-line repository statistics below the top app bar."""
 
 import time
-from typing import Any
+from typing import Any, override
 
 from rich.cells import cell_len
 from rich.text import Text
+from textual.app import ComposeResult
+from textual.containers import Horizontal
 from textual.widgets import Static
 
 from gitux.domain import FileCounts, HeadSummary
@@ -19,7 +21,8 @@ _PADDING_COLS: int = 2  # matches `padding: 0 1` on #stats-bar
 # drop priority, LOWEST first (head is never dropped)
 _SEGMENT_PRIORITY: tuple[str, ...] = ("ahead_behind", "remote", "repo", "user", "files", "date", "head")
 
-_PREFIX_CELLS: int = 13  # " ■ REPO STATS"
+_PREFIX_CELLS: int = 2  # " ■"
+_STEPS_CELLS: int = 7  # "● ● ● ●"
 _SEPARATOR_CELLS: int = 3  # " │ "
 
 
@@ -48,15 +51,16 @@ def _format_relative_time(epoch: int, *, now: float | None = None) -> str:
     return f"{delta // 31536000} years ago"
 
 
-class RepoStatsBar(Static):
+class RepoStatsBar(Horizontal):
     """Single-line stats bar fed by ``GituxApp._refresh_all``.
 
-    Renders: `` ■ REPO STATS │ user │ hash subject │ date │ +s ~m ?u [!c] │ ↑a ↓b │ remote``.
+    Left side renders `` ■ │ user │ hash subject │ date │ +s ~m ?u [!c] │ ↑a ↓b │ remote``;
+    the commit-step indicator ``● ● ● ●`` is pinned to the right edge.
     Uses hybrid B3 truncation: hard caps + width-adaptive segment drop.
     """
 
     def __init__(self, **kwargs) -> None:
-        super().__init__("", **kwargs)
+        super().__init__(**kwargs)
         self._user: str = ""
         self._head_summary: HeadSummary | None = None
         self._file_counts: FileCounts | None = None
@@ -65,6 +69,13 @@ class RepoStatsBar(Static):
         self._remote = "(local)"
         self._remote_branch = ""
         self._repo_name: str = ""
+        self._steps: int = 0
+
+    @override
+    def compose(self) -> ComposeResult:
+        """Yield the left stats text and the right-aligned step indicator."""
+        yield Static("", id="stats-left")
+        yield Static("", id="stats-steps")
 
     def update_stats(
         self,
@@ -76,8 +87,13 @@ class RepoStatsBar(Static):
         remote: str = "(local)",
         remote_branch: str = "",
         repo_name: str = "",
+        steps: int | None = None,
     ) -> None:
-        """Render the stats bar with the given repo state (safe defaults included)."""
+        """Render the stats bar with the given repo state (safe defaults included).
+
+        ``steps`` optionally overrides the derived step mask (test hook; the App
+        never passes it).
+        """
         self._remote = remote or "(local)"
         self._remote_branch = remote_branch if remote else ""
         self._user = user
@@ -86,7 +102,28 @@ class RepoStatsBar(Static):
         self._ahead = ahead
         self._behind = behind
         self._repo_name = repo_name
-        self.update(self._render_text())
+        if steps is None:
+            has_remote = bool(self._remote) and self._remote != "(local)"
+            step1 = (self._file_counts or FileCounts(0, 0, 0, 0)).staged > 0
+            step2 = self._head_summary is not None
+            step3 = has_remote and self._ahead == 0
+            step4 = has_remote and self._ahead == 0 and self._behind == 0
+            self._steps = (
+                (1 if step1 else 0)
+                + (1 if (step1 and step2) else 0)
+                + (1 if (step1 and step2 and step3) else 0)
+                + (1 if (step1 and step2 and step3 and step4) else 0)
+            )
+        else:
+            self._steps = steps
+        self._update_render()
+
+    def _update_render(self) -> None:
+        """Push the current stats text and step indicator to the child widgets."""
+        if not self.is_mounted:
+            return
+        self.query_one("#stats-left", Static).update(self._render_text())
+        self.query_one("#stats-steps", Static).update(self._render_steps())
 
     def _build_segments(self) -> list[dict[str, Any]]:
         """Build segments in locked visual order with text, style, and drop info."""
@@ -169,7 +206,11 @@ class RepoStatsBar(Static):
         )
 
     def _fit_segments(self, segments: list[dict[str, Any]], width: int) -> list[dict[str, Any]]:
-        """Drop lowest-priority segments, then elide the head subject to fit width."""
+        """Drop lowest-priority segments, then elide the head subject to fit width.
+
+        ``width`` is the available width for the left text (segments + prefix +
+        separators), i.e. the total bar width minus the step-indicator width.
+        """
         total = self._total_cells(segments)
         while total > width and len(segments) > 1:
             droppable = [seg for seg in segments if seg["name"] != "head"]
@@ -196,17 +237,30 @@ class RepoStatsBar(Static):
         return segments
 
     def _render_text(self, width: int | None = None) -> Text:
-        """Render the stats line, dropping segments to fit the given width."""
+        """Render the left stats line, dropping segments to fit the given width."""
         if width is None:
             width = self.size.width - _PADDING_COLS if self.is_mounted else 0
         if width <= 0:
             width = _DEFAULT_RENDER_WIDTH
         segments = self._build_segments()
-        segments = self._fit_segments(segments, width)
+        segments = self._fit_segments(segments, width - _STEPS_CELLS)
 
         text = Text(no_wrap=True)
-        text.append(" \u25a0 REPO STATS", style="bold #c0c1ff")
+        text.append(" \u25a0", style="bold #c0c1ff")
         for seg in segments:
             text.append(" \u2502 ", style="#c7c4d7")
             text.append(seg["plain"], style=seg["style"])
+        return text
+
+    def _render_steps(self) -> Text:
+        """Render the commit-step indicator dots (pinned to the right edge)."""
+        text = Text(no_wrap=True)
+        for i in range(4):
+            lit = i < self._steps
+            text.append(
+                "\u25cf" if lit else "\u25cb",
+                style=("bold #34d399" if lit else "#908fa0"),
+            )
+            if i < 3:
+                text.append(" ", style="")
         return text

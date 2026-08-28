@@ -37,7 +37,7 @@ class GituxFooter(Static):
 
         t.append(" \u25a0", style="bold #ffb783")
         t.append(f" GITUX v{__version__} \u2502", style="bold #c7c4d7")
-        t.append(" [C] Commit [P] Push [R] Refresh [S] Stage [A] Stage All [B] Branches [?] Help [Q] Quit \u2502", style="#b7c8e1")
+        t.append(" [C] Commit [P] Push [R] Refresh [L] Log [S] Stage [A] Stage All [B] Branches [?] Help [Q] Quit \u2502", style="#b7c8e1")
         t.append(f" {self._encoding} ", style="#c7c4d7")
         t.append("\u2713" if self._sync_ok else "\u2717", style="bold #10b981" if self._sync_ok else "bold #ffb4ab")
 

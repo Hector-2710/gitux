@@ -20,7 +20,7 @@ class BlockContainer(Vertical):
 
     def __init__(
         self,
-        title: str,
+        title: str = "",
         subtitle: str = "",
         content_widget: Widget | None = None,
         name: str | None = None,
@@ -55,7 +55,7 @@ class BlockContainer(Vertical):
         header.update(self._render_header())
 
     def _render_header(self) -> str:
-        """Render the header line: ``Title / subtitle`` or just the title."""
-        if self._subtitle:
+        """Render the header line: ``Title / subtitle`` or subtitle alone."""
+        if self._title and self._subtitle:
             return f"{self._title} / {self._subtitle}"
-        return self._title
+        return self._subtitle or self._title

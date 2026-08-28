@@ -5,7 +5,7 @@ from textual.css.query import NoMatches
 from textual.widgets import Button
 
 from gitux.domain import FileStatus, HeadSummary, OperationState, RepoInfo
-from gitux.ui.app import GituxApp
+from gitux.ui.app import GituxApp, _BLOCK_MAP, _BLOCK_ORDER
 from gitux.ui.widgets import RepoStatsBar
 
 
@@ -19,16 +19,18 @@ async def test_app_mounts_without_error():
         assert app.query_one("#main-content") is not None
         assert app.query_one("#bento-top") is not None
         assert app.query_one("#files-block") is not None
-        assert app.query_one("#commits-block") is not None
         assert app.query_one("#diff-block") is not None
         assert app.query_one("#changed-files") is not None
-        assert app.query_one("#commit-log") is not None
         assert app.query_one("#diff-viewer") is not None
         assert app.query_one("GituxFooter") is not None
         with pytest.raises(NoMatches):
             app.query_one("#sidebar")
         with pytest.raises(NoMatches):
             app.query_one("#workspace")
+        with pytest.raises(NoMatches):
+            app.query_one("#commits-block")
+        with pytest.raises(NoMatches):
+            app.query_one("#commit-log")
 
 
 @pytest.mark.asyncio
@@ -102,16 +104,25 @@ async def test_enter_in_commit_modal_empty_input_no_toggle():
 
 
 @pytest.mark.asyncio
-async def test_tab_cycles_three_blocks():
+async def test_tab_cycles_two_blocks():
     app = GituxApp()
     async with app.run_test() as pilot:
         assert app._active_block == "files"
         await pilot.press("tab")
-        assert app._active_block == "commits"
-        await pilot.press("tab")
         assert app._active_block == "diff"
         await pilot.press("tab")
         assert app._active_block == "files"
+        await pilot.press("tab")
+        assert app._active_block == "diff"
+
+
+def test_block_map_and_order():
+    assert _BLOCK_ORDER == ("files", "diff")
+    assert "commits" not in _BLOCK_MAP
+
+
+def test_route_to_commits_deleted():
+    assert getattr(GituxApp, "_route_to_commits", None) is None
 
 
 @pytest.mark.asyncio
@@ -169,10 +180,12 @@ async def test_refresh_all_wires_new_bar_data():
             ):
             app._refresh_all()
         stats = app.query_one("#stats-bar")
+        left = stats.query_one("#stats-left")
         header = app.query_one("#top-bar")
-        assert stats.content.plain.startswith(
-            " \u25a0 REPO STATS \u2502 gitux \u2502 hector \u2502 (no commits) \u2502 "
-        )
+        assert left.content.plain.startswith(" \u25a0 \u2502")
+        assert "gitux" in left.content.plain
+        assert "hector" in left.content.plain
+        assert "(no commits)" in left.content.plain
         assert " \u25cf" in header.content.plain  # WIP dot always present
 
 
@@ -191,10 +204,10 @@ async def test_refresh_all_without_repo_info_omits_repo_segment():
             ):
             app._refresh_all()
         stats = app.query_one("#stats-bar")
-        assert stats.content.plain.startswith(
-            " \u25a0 REPO STATS \u2502 hector \u2502 "
-        )
-        assert "gitux" not in stats.content.plain
+        left = stats.query_one("#stats-left")
+        assert left.content.plain.startswith(" \u25a0 \u2502")
+        assert "gitux" not in left.content.plain
+        assert "hector" in left.content.plain
 
 
 def _seed_files(app, count: int = 30) -> None:
@@ -205,135 +218,6 @@ def _seed_files(app, count: int = 30) -> None:
         "gitux.presenter.commit_presenter.get_status", return_value=files
     ):
         app._refresh_all()
-
-
-_GRAPH_LOG = "* c4474af feat: initial\n|"
-_DETAIL_TEXT = "\n".join(f"detail line {i}" for i in range(60))
-
-
-def _seed_commit_log(app, graph_text: str) -> None:
-    with unittest.mock.patch.object(
-        app.repo, "get_commit_log", return_value=graph_text
-    ), unittest.mock.patch(
-        "gitux.presenter.commit_presenter.get_status", return_value=[]
-    ):
-        app._refresh_all()
-
-
-@pytest.mark.asyncio
-async def test_commit_enter_opens_detail():
-    app = GituxApp()
-    async with app.run_test() as pilot:
-        _seed_commit_log(app, _GRAPH_LOG)
-        with unittest.mock.patch.object(
-            app.repo,
-            "get_commit_details",
-            return_value="c4474af Jane Doe <j@x>\n\nfeat: initial",
-        ):
-            await pilot.press("tab")
-            await pilot.press("enter")
-        log = app.query_one("#commit-log")
-        assert log.is_detail_mode is True
-        assert "c4474af Jane Doe" in log._detail_text
-
-
-@pytest.mark.asyncio
-async def test_commit_escape_exits_detail():
-    app = GituxApp()
-    async with app.run_test() as pilot:
-        _seed_commit_log(app, _GRAPH_LOG)
-        with unittest.mock.patch.object(
-            app.repo, "get_commit_details", return_value="detail"
-        ):
-            await pilot.press("tab")
-            await pilot.press("enter")
-        log = app.query_one("#commit-log")
-        assert log.is_detail_mode is True
-        await pilot.press("escape")
-        assert log.is_detail_mode is False
-        assert log._detail_text is None
-
-
-@pytest.mark.asyncio
-async def test_enter_on_graph_line_no_detail():
-    app = GituxApp()
-    async with app.run_test() as pilot:
-        _seed_commit_log(app, "* c4474af feat: initial\n|")
-        with unittest.mock.patch.object(
-            app.repo, "get_commit_details"
-        ) as mock_details:
-            await pilot.press("tab")
-            await pilot.press("down")
-            await pilot.press("enter")
-        log = app.query_one("#commit-log")
-        assert log.is_detail_mode is False
-        mock_details.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_enter_with_empty_details_is_noop():
-    app = GituxApp()
-    async with app.run_test() as pilot:
-        _seed_commit_log(app, _GRAPH_LOG)
-        with unittest.mock.patch.object(
-            app.repo, "get_commit_details", return_value=""
-        ), unittest.mock.patch.object(app, "notify") as mock_notify:
-            await pilot.press("tab")
-            await pilot.press("enter")
-        log = app.query_one("#commit-log")
-        assert log.is_detail_mode is False
-        mock_notify.assert_not_called()
-
-
-@pytest.mark.asyncio
-async def test_enter_twice_opens_detail_once():
-    app = GituxApp()
-    async with app.run_test() as pilot:
-        _seed_commit_log(app, _GRAPH_LOG)
-        with unittest.mock.patch.object(
-            app.repo, "get_commit_details", return_value="detail"
-        ) as mock_details:
-            await pilot.press("tab")
-            await pilot.press("enter")
-            await pilot.press("enter")
-        log = app.query_one("#commit-log")
-        assert log.is_detail_mode is True
-        mock_details.assert_called_once_with("c4474af")
-
-
-@pytest.mark.asyncio
-async def test_refresh_exits_detail_mode():
-    app = GituxApp()
-    async with app.run_test() as pilot:
-        _seed_commit_log(app, _GRAPH_LOG)
-        with unittest.mock.patch.object(
-            app.repo, "get_commit_details", return_value="detail"
-        ):
-            await pilot.press("tab")
-            await pilot.press("enter")
-        log = app.query_one("#commit-log")
-        assert log.is_detail_mode is True
-        await pilot.press("r")
-        assert log.is_detail_mode is False
-
-
-@pytest.mark.asyncio
-async def test_detail_mode_down_scrolls_without_cursor_move():
-    app = GituxApp()
-    async with app.run_test() as pilot:
-        _seed_commit_log(app, _GRAPH_LOG)
-        with unittest.mock.patch.object(
-            app.repo, "get_commit_details", return_value=_DETAIL_TEXT
-        ):
-            await pilot.press("tab")
-            await pilot.press("enter")
-        log = app.query_one("#commit-log")
-        assert log.is_detail_mode is True
-        cursor_before = log._cursor_index
-        y0 = log.scroll_y
-        await pilot.press("down")
-        assert log.scroll_y > y0
-        assert log._cursor_index == cursor_before
 
 
 @pytest.mark.asyncio
@@ -394,34 +278,47 @@ async def test_modal_open_tab_does_not_cycle_blocks():
 async def test_blocks_bordered_and_aligned_at_mount():
     app = GituxApp()
     async with app.run_test(size=(100, 40)) as pilot:
-        for block_id in ("#files-block", "#commits-block", "#diff-block"):
+        for block_id in ("#files-block", "#diff-block"):
             block = app.query_one(block_id)
             assert len(block.classes & {"block-active", "block-inactive"}) == 1
-            assert block.styles.border.top[0] == "solid"
+            assert block.styles.border.top[0] == "round"
         files_header = app.query_one("#files-block").query_one(".block-header")
-        commits_header = app.query_one("#commits-block").query_one(".block-header")
         diff_header = app.query_one("#diff-block").query_one(".block-header")
-        assert files_header.region.y == commits_header.region.y
+        assert files_header.region.y == diff_header.region.y
         assert files_header.region.y == 2
-        assert commits_header.region.y == 2
-        assert diff_header.region.y == 21
+        assert diff_header.region.y == 2
 
 
 @pytest.mark.asyncio
-async def test_commits_block_has_no_scrollbar_and_log_scrolls():
+async def test_block_headers_subtitle_only():
     app = GituxApp()
     async with app.run_test() as pilot:
-        block = app.query_one("#commits-block")
-        assert block.show_vertical_scrollbar is False
-        assert block.max_scroll_y == 0
-        log = app.query_one("#commit-log")
-        assert log.styles.scrollbar_visibility == "hidden"
-        assert log.show_vertical_scrollbar is False
-        log.show_log("\n".join(f"* {i:07x} msg {i}" for i in range(80)))
-        await pilot.press("tab")
-        await pilot.press("down")
-        assert app.query_one("#commit-log").scroll_y > 0
-        assert block.max_scroll_y == 0
+        assert app.query_one("#files-block")._title == ""
+        assert app.query_one("#diff-block")._title == ""
+        _seed_files(app, count=30)
+        assert (
+            app.query_one("#files-block").query_one(".block-header").content
+            == "30 items"
+        )
+        changed_files = app.query_one("#changed-files")
+        changed_files._cursor_index = 999
+        with unittest.mock.patch.object(
+            app.presenter, "get_staged_preview", return_value=""
+        ):
+            app._on_file_selected()
+        assert (
+            app.query_one("#diff-block").query_one(".block-header").content
+            == "staged diff"
+        )
+        changed_files._cursor_index = 0
+        with unittest.mock.patch.object(
+            app.presenter, "get_diff", return_value="diff"
+        ):
+            app._on_file_selected()
+        assert (
+            app.query_one("#diff-block").query_one(".block-header").content
+            == "src/file_000.py"
+        )
 
 
 @pytest.mark.asyncio
@@ -442,5 +339,6 @@ async def test_refresh_all_wires_head_hash():
             ):
             app._refresh_all()
         stats = app.query_one("#stats-bar")
-        assert "feat: x" in stats.content.plain
-        assert "66f7291" not in stats.content.plain
+        left = stats.query_one("#stats-left")
+        assert "feat: x" in left.content.plain
+        assert "66f7291" not in left.content.plain
