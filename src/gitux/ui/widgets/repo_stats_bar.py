@@ -1,29 +1,33 @@
-"""Repo stats bar — one-line repository statistics below the top app bar."""
+"""Repo stats bar — two-line repository status below the top app bar.
+
+Left side shows ``repo │ hash subject │ relative time │ branch``; the four
+commit-step indicator dots are rendered large on the right edge. The bar uses
+rounded borders to match the rest of the UI.
+"""
 
 import time
-from typing import Any, override
+from typing import override
 
 from rich.cells import cell_len
 from rich.text import Text
 from textual.app import ComposeResult
-from textual.containers import Horizontal
+from textual.containers import Vertical
 from textual.widgets import Static
 
-from gitux.domain import FileCounts, HeadSummary
+from gitux.domain import HeadSummary
 
-_MAX_USER_CHARS: int = 16
 _MAX_REPO_CHARS: int = 32
-_MAX_REMOTE_CHARS: int = 32
+_MAX_BRANCH_CHARS: int = 24
 _MAX_HEAD_SUBJECT_CHARS: int = 40
 _DEFAULT_RENDER_WIDTH: int = 200  # unmounted fallback so bare _render_text() is full
 _PADDING_COLS: int = 2  # matches `padding: 0 1` on #stats-bar
 
 # drop priority, LOWEST first (head is never dropped)
-_SEGMENT_PRIORITY: tuple[str, ...] = ("ahead_behind", "remote", "repo", "user", "files", "date", "head")
+_SEGMENT_PRIORITY: tuple[str, ...] = ("branch", "repo", "date", "head")
 
-_PREFIX_CELLS: int = 2  # " ■"
-_STEPS_CELLS: int = 7  # "● ● ● ●"
+_PREFIX_CELLS: int = 0  # no leading icon anymore
 _SEPARATOR_CELLS: int = 3  # " │ "
+_STEPS_CELLS: int = 10  # "●  ●  ●  ●" (4 dots + 3 double-space gaps)
 
 
 def _format_relative_time(epoch: int, *, now: float | None = None) -> str:
@@ -51,24 +55,19 @@ def _format_relative_time(epoch: int, *, now: float | None = None) -> str:
     return f"{delta // 31536000} years ago"
 
 
-class RepoStatsBar(Horizontal):
-    """Single-line stats bar fed by ``GituxApp._refresh_all``.
+class RepoStatsBar(Vertical):
+    """Two-line status bar fed by ``GituxApp._refresh_all``.
 
-    Left side renders `` ■ │ user │ hash subject │ date │ +s ~m ?u [!c] │ ↑a ↓b │ remote``;
-    the commit-step indicator ``● ● ● ●`` is pinned to the right edge.
+    Line 1 renders ``repo │ hash subject │ relative time │ branch``; line 2
+    renders the commit-step indicator ``● ● ● ●`` large on the right edge.
     Uses hybrid B3 truncation: hard caps + width-adaptive segment drop.
     """
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self._user: str = ""
-        self._head_summary: HeadSummary | None = None
-        self._file_counts: FileCounts | None = None
-        self._ahead = 0
-        self._behind = 0
-        self._remote = "(local)"
-        self._remote_branch = ""
         self._repo_name: str = ""
+        self._branch: str = ""
+        self._head_summary: HeadSummary | None = None
         self._steps: int = 0
 
     @override
@@ -79,14 +78,9 @@ class RepoStatsBar(Horizontal):
 
     def update_stats(
         self,
-        user: str = "",
-        head_summary: HeadSummary | None = None,
-        file_counts: FileCounts | None = None,
-        ahead: int = 0,
-        behind: int = 0,
-        remote: str = "(local)",
-        remote_branch: str = "",
         repo_name: str = "",
+        branch: str = "",
+        head_summary: HeadSummary | None = None,
         steps: int | None = None,
     ) -> None:
         """Render the stats bar with the given repo state (safe defaults included).
@@ -94,26 +88,11 @@ class RepoStatsBar(Horizontal):
         ``steps`` optionally overrides the derived step mask (test hook; the App
         never passes it).
         """
-        self._remote = remote or "(local)"
-        self._remote_branch = remote_branch if remote else ""
-        self._user = user
-        self._head_summary = head_summary
-        self._file_counts = file_counts
-        self._ahead = ahead
-        self._behind = behind
         self._repo_name = repo_name
+        self._branch = branch
+        self._head_summary = head_summary
         if steps is None:
-            has_remote = bool(self._remote) and self._remote != "(local)"
-            step1 = (self._file_counts or FileCounts(0, 0, 0, 0)).staged > 0
-            step2 = self._head_summary is not None
-            step3 = has_remote and self._ahead == 0
-            step4 = has_remote and self._ahead == 0 and self._behind == 0
-            self._steps = (
-                (1 if step1 else 0)
-                + (1 if (step1 and step2) else 0)
-                + (1 if (step1 and step2 and step3) else 0)
-                + (1 if (step1 and step2 and step3 and step4) else 0)
-            )
+            self._steps = 0
         else:
             self._steps = steps
         self._update_render()
@@ -125,9 +104,9 @@ class RepoStatsBar(Horizontal):
         self.query_one("#stats-left", Static).update(self._render_text())
         self.query_one("#stats-steps", Static).update(self._render_steps())
 
-    def _build_segments(self) -> list[dict[str, Any]]:
-        """Build segments in locked visual order with text, style, and drop info."""
-        segments: list[dict[str, Any]] = []
+    def _build_segments(self) -> list[dict[str, str]]:
+        """Build segments in locked visual order with text and style."""
+        segments: list[dict[str, str]] = []
 
         if self._repo_name:
             segments.append({
@@ -136,18 +115,11 @@ class RepoStatsBar(Horizontal):
                 "style": "bold #e4e1ed",
             })
 
-        segments.append({
-            "name": "user",
-            "plain": (self._user or "unknown")[:_MAX_USER_CHARS],
-            "style": "#e4e1ed",
-        })
-
         summary = self._head_summary
         if summary is None:
             segments.append({
                 "name": "head",
                 "plain": "(no commits)",
-                "hash": "",
                 "subject": "(no commits)",
                 "style": "#e4e1ed",
             })
@@ -157,8 +129,7 @@ class RepoStatsBar(Horizontal):
                 subject = subject[: _MAX_HEAD_SUBJECT_CHARS - 1] + "\u2026"
             segments.append({
                 "name": "head",
-                "plain": subject,
-                "hash": "",
+                "plain": f"{summary.short_hash} {subject}",
                 "subject": subject,
                 "style": "#e4e1ed",
             })
@@ -170,46 +141,28 @@ class RepoStatsBar(Horizontal):
                 "style": "#c7c4d7",
             })
 
-        counts = self._file_counts or FileCounts(0, 0, 0, 0)
-        files = f"+{counts.staged} ~{counts.modified} ?{counts.untracked}"
-        if counts.conflicts > 0:
-            files += f" !{counts.conflicts}"
-        segments.append({
-            "name": "files",
-            "plain": files,
-            "style": "#c7c4d7",
-        })
-
-        segments.append({
-            "name": "ahead_behind",
-            "plain": f"\u2191{self._ahead} \u2193{self._behind}",
-            "style": "bold #c0c1ff",
-        })
-
-        remote_slug = (
-            f"{self._remote}/{self._remote_branch}" if self._remote_branch else self._remote
-        )
-        segments.append({
-            "name": "remote",
-            "plain": remote_slug[:_MAX_REMOTE_CHARS],
-            "style": "#e4e1ed",
-        })
+        if self._branch:
+            segments.append({
+                "name": "branch",
+                "plain": self._branch[:_MAX_BRANCH_CHARS],
+                "style": "bold #c0c1ff",
+            })
 
         return segments
 
-    def _total_cells(self, segments: list[dict[str, Any]]) -> int:
-        """Total rendered cell width of all segments plus prefix and separators."""
+    def _total_cells(self, segments: list[dict[str, str]]) -> int:
+        """Total rendered cell width of all segments plus separators."""
         return (
             _PREFIX_CELLS
             + sum(cell_len(seg["plain"]) for seg in segments)
             + _SEPARATOR_CELLS * (len(segments) - 1)
         )
 
-    def _fit_segments(self, segments: list[dict[str, Any]], width: int) -> list[dict[str, Any]]:
+    def _fit_segments(self, segments: list[dict[str, str]], width: int) -> list[dict[str, str]]:
         """Drop lowest-priority segments, then elide the head subject to fit width.
 
-        ``width`` is the available width for the left text (segments + prefix +
-        separators), i.e. the total bar width minus the step-indicator width.
+        ``width`` is the available width for the left text (segments + separators),
+        i.e. the total bar width minus the step-indicator width.
         """
         total = self._total_cells(segments)
         while total > width and len(segments) > 1:
@@ -222,18 +175,12 @@ class RepoStatsBar(Horizontal):
 
         if len(segments) == 1 and total > width:
             head = segments[0]
-            hash_len = cell_len(head["hash"])
-            avail = width - _PREFIX_CELLS - hash_len - 1
+            avail = width - _PREFIX_CELLS - 1
             if avail < 1:
-                if head["hash"]:
-                    head["plain"] = head["hash"]
-                else:
-                    head["plain"] = head["plain"][: max(0, width - _PREFIX_CELLS)]
+                head["plain"] = head["plain"][: max(0, width - _PREFIX_CELLS)]
             else:
                 elided = head["subject"][: avail - 1] + "\u2026"
-                head["plain"] = (
-                    f"{head['hash']} {elided}" if head["hash"] else elided
-                )
+                head["plain"] = elided
         return segments
 
     def _render_text(self, width: int | None = None) -> Text:
@@ -246,14 +193,18 @@ class RepoStatsBar(Horizontal):
         segments = self._fit_segments(segments, width - _STEPS_CELLS)
 
         text = Text(no_wrap=True)
-        text.append(" \u25a0", style="bold #c0c1ff")
-        for seg in segments:
-            text.append(" \u2502 ", style="#c7c4d7")
+        for i, seg in enumerate(segments):
+            if i > 0:
+                text.append(" \u2502 ", style="#c7c4d7")
             text.append(seg["plain"], style=seg["style"])
         return text
 
     def _render_steps(self) -> Text:
-        """Render the commit-step indicator dots (pinned to the right edge)."""
+        """Render the commit-step indicator dots (pinned to the right edge).
+
+        Dots are spaced wider and rendered bold to read larger against the
+        two-line status bar.
+        """
         text = Text(no_wrap=True)
         for i in range(4):
             lit = i < self._steps
@@ -262,5 +213,5 @@ class RepoStatsBar(Horizontal):
                 style=("bold #34d399" if lit else "#908fa0"),
             )
             if i < 3:
-                text.append(" ", style="")
+                text.append("  ", style="")
         return text

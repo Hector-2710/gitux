@@ -182,9 +182,9 @@ async def test_refresh_all_wires_new_bar_data():
         stats = app.query_one("#stats-bar")
         left = stats.query_one("#stats-left")
         header = app.query_one("#top-bar")
-        assert left.content.plain.startswith(" \u25a0 \u2502")
+        assert left.content.plain.startswith("gitux")
         assert "gitux" in left.content.plain
-        assert "hector" in left.content.plain
+        assert "hector" not in left.content.plain
         assert "(no commits)" in left.content.plain
         assert " \u25cf" in header.content.plain  # WIP dot always present
 
@@ -205,9 +205,8 @@ async def test_refresh_all_without_repo_info_omits_repo_segment():
             app._refresh_all()
         stats = app.query_one("#stats-bar")
         left = stats.query_one("#stats-left")
-        assert left.content.plain.startswith(" \u25a0 \u2502")
         assert "gitux" not in left.content.plain
-        assert "hector" in left.content.plain
+        assert "hector" not in left.content.plain
 
 
 def _seed_files(app, count: int = 30) -> None:
@@ -285,8 +284,8 @@ async def test_blocks_bordered_and_aligned_at_mount():
         files_header = app.query_one("#files-block").query_one(".block-header")
         diff_header = app.query_one("#diff-block").query_one(".block-header")
         assert files_header.region.y == diff_header.region.y
-        assert files_header.region.y == 2
-        assert diff_header.region.y == 2
+        assert files_header.region.y == 4
+        assert diff_header.region.y == 4
 
 
 @pytest.mark.asyncio
@@ -341,4 +340,4 @@ async def test_refresh_all_wires_head_hash():
         stats = app.query_one("#stats-bar")
         left = stats.query_one("#stats-left")
         assert "feat: x" in left.content.plain
-        assert "66f7291" not in left.content.plain
+        assert "66f7291" in left.content.plain

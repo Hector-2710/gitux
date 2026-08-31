@@ -17,9 +17,10 @@ Screen {
 
 #stats-bar {
     dock: top;
-    height: 1;
-    background: #1f1f27;
+    height: 3;
+    background: #0d0d15;
     color: #c7c4d7;
+    border: round #464554;
     padding: 0 1;
     layout: horizontal;
 }
@@ -34,7 +35,6 @@ Screen {
     width: auto;
     height: 1;
     content-align: right middle;
-    background: #2a2a35;
     padding: 0 1;
 }
 
@@ -124,7 +124,7 @@ GituxFooter {
 }
 
 #commit-modal {
-    background: #34343d;
+    background: #0d0d15;
     border: round #c0c1ff;
     color: #e4e1ed;
     width: 60%;
@@ -132,27 +132,28 @@ GituxFooter {
 }
 
 #help-container {
-    background: #34343d;
+    background: #0d0d15;
     border: round #c0c1ff;
     color: #e4e1ed;
     width: 64;
     max-width: 90%;
     max-height: 85%;
-    padding: 1 2;
+    padding: 0;
     overflow-y: auto;
 }
 
 #help-title {
     text-style: bold;
-    color: #c0c1ff;
+    color: #e4e1ed;
     text-align: center;
-    margin: 0 0 1 0;
-    content-align: center middle;
+    background: #34343d;
+    padding: 0 1;
     height: 1;
 }
 
 #help-body {
     color: #e4e1ed;
+    padding: 0 1;
 }
 
 #help-body .key {
@@ -183,8 +184,9 @@ CommitScreen {
 
 #commit-modal-title {
     text-style: bold;
-    color: #c0c1ff;
-    margin: 0 0 1 0;
+    color: #e4e1ed;
+    background: #34343d;
+    padding: 0 1;
     height: 1;
     text-align: center;
 }
@@ -260,21 +262,22 @@ BranchScreen {
 }
 
 #branch-modal {
-    background: #34343d;
+    background: #0d0d15;
     border: round #c0c1ff;
     color: #e4e1ed;
     width: 50;
     max-width: 90%;
     height: auto;
-    padding: 1 2;
+    padding: 0;
 }
 
 #branch-modal-title {
     text-style: bold;
-    color: #c0c1ff;
+    color: #e4e1ed;
+    background: #34343d;
+    padding: 0 1;
     text-align: center;
     height: 1;
-    margin: 0 0 1 0;
 }
 
 #branch-option-list {
@@ -283,6 +286,7 @@ BranchScreen {
     border: round #464554;
     height: auto;
     max-height: 60%;
+    margin: 1 1 0 1;
 }
 
 #branch-option-list > .option-list--option-highlighted {
@@ -304,7 +308,7 @@ CommitLogScreen {
 }
 
 #commit-log-modal {
-    background: #34343d;
+    background: #0d0d15;
     border: round #c0c1ff;
     color: #e4e1ed;
     width: 70%;

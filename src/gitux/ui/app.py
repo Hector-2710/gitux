@@ -252,7 +252,6 @@ class GituxApp(App[None]):
         repo_info = self._get_repo_info_safe()
         is_detached = self._get_detached_safe()
 
-        user = self._get_user_safe()
         head_summary = self._get_head_summary_safe()
         default_branch = self._get_default_branch_safe()
         operation = self._get_operation_state_safe()
@@ -276,14 +275,9 @@ class GituxApp(App[None]):
 
         stats_bar = self.query_one("#stats-bar", RepoStatsBar)
         stats_bar.update_stats(
-            user=user,
-            head_summary=head_summary,
-            file_counts=file_counts,
-            ahead=remote_status.ahead if remote_status else 0,
-            behind=remote_status.behind if remote_status else 0,
-            remote=remote_status.remote if remote_status else "(local)",
-            remote_branch=remote_status.branch if remote_status else "",
             repo_name=repo_info.name if repo_info else "",
+            branch=branch,
+            head_summary=head_summary,
         )
 
         changed_files = self.query_one("#changed-files", ChangedFilesPanel)
@@ -359,10 +353,6 @@ class GituxApp(App[None]):
     def _get_branch_safe(self) -> str:
         """Return current branch name, or empty string on error."""
         return self.repo.get_current_branch()
-
-    def _get_user_safe(self) -> str:
-        """Return the configured git user, or empty string on error."""
-        return self.repo.get_user()
 
     def _get_head_summary_safe(self) -> HeadSummary | None:
         """Return the HEAD commit summary, or None on error."""
