@@ -55,3 +55,6 @@ packages = ["src/gitux"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.basedpyright]
+reportUnusedCallResult = "none"

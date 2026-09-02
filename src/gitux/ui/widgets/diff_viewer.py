@@ -96,23 +96,22 @@ class DiffViewerWidget(RichLog):
                 old_lineno, new_lineno = _parse_hunk_header(line)
                 text.append(f"  {line}\n", style=_COLORS["header"])
             elif line.startswith("+"):
-                content = line[1:]  # strip leading +
+                content = line[1:]  
                 text.append(
                     f"  {new_lineno:>4} +{content}\n",
                     style=_COLORS["addition"],
                 )
                 new_lineno += 1
             elif line.startswith("-"):
-                content = line[1:]  # strip leading -
+                content = line[1:]  
                 text.append(
                     f"  {old_lineno:>4} -{content}\n",
                     style=_COLORS["deletion"],
                 )
                 old_lineno += 1
             elif _is_diff_metadata(line):
-                continue  # skip metadata headers
+                continue  
             else:
-                # Context line (starts with space)
                 content = line[1:] if line.startswith(" ") else line
                 text.append(
                     f"  {new_lineno:>4} {content}\n",
@@ -127,9 +126,9 @@ class DiffViewerWidget(RichLog):
                 style=f"italic {_COLORS['dim']}",
             )
 
-        _ = super().clear()
-        _ = self.write(text)
-        _ = self.scroll_home(animate=False)
+        super().clear()
+        self.write(text)
+        self.scroll_home(animate=False)
 
     def show_binary_placeholder(self) -> None:
         """Show placeholder for binary files."""
@@ -139,11 +138,11 @@ class DiffViewerWidget(RichLog):
     def clear(self) -> Self:
         """Clear the diff display."""
         self._current_diff = ""
-        _ = self._show_placeholder("Select a file to view diff")
-        return self
+        return self._show_placeholder("Select a file to view diff")
 
-    def _show_placeholder(self, message: str) -> None:
+    def _show_placeholder(self, message: str) -> Self:
         """Show a dim placeholder message and scroll to top."""
-        _ = super().clear()
-        _ = self.write(Text(f"  {message}", style=f"italic {_COLORS['dim']}"))
-        _ = self.scroll_home(animate=False)
+        super().clear()
+        self.write(Text(f"  {message}", style=f"italic {_COLORS['dim']}"))
+        self.scroll_home(animate=False)
+        return self
