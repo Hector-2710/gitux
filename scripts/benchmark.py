@@ -234,8 +234,8 @@ async def _run_app_headless() -> None:
     from gitux.ui.app import GituxApp
 
     app = GituxApp()
-    async with app.run_test(headless=True):
-        pass
+    async with app.run_test(headless=True) as pilot:
+        await pilot.pause()  # ensure first render completes before exiting
 
 
 def _benchmark_startup() -> float:

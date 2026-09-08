@@ -40,7 +40,7 @@ class HelpScreen(ModalScreen[None]):
 
         # ── Navigation ──
         _section("Navigation")
-        _shortcut("Tab", "Next section (Files/Commits/Diff)")
+        _shortcut("Tab", "Next section (Files/Diff)")
         _shortcut("\u2191 / \u2193", "Scroll active section content")
         _shortcut("Enter", "Activate selected section")
         _shortcut("j / k", "Scroll down / up")
@@ -61,6 +61,7 @@ class HelpScreen(ModalScreen[None]):
         _section("General")
         _shortcut("r", "Refresh status")
         _shortcut("b", "Branches panel")
+        _shortcut("l", "Commit log")
         _shortcut("?", "Show this help")
         _shortcut("q", "Quit GITUX")
         _shortcut("Escape", "Cancel / Go back")
@@ -68,7 +69,6 @@ class HelpScreen(ModalScreen[None]):
         # ── Upcoming (dimmed) ──
         _section("Coming Soon")
         t.append("    /              Search files\n", style="dim #64748b")
-        t.append("    L              Commit log\n", style="dim #64748b")
         t.append("    S              Stash panel\n", style="dim #64748b")
 
         return t

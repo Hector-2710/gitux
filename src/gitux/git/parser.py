@@ -8,7 +8,10 @@ def parse_status(raw: str) -> list[FileStatus]:
 
     Format per entry (NUL-delimited):
         XY<SPACE>path<NUL>               # regular file (XY + space + path)
-        R<SCORE><SPACE>old<NUL>new<NUL>  # rename/copy (XY + score + space + old, then new)
+        XY<SPACE>new<NUL>old<NUL>        # rename/copy (XY + space + new path, then old path)
+
+    Note: in the ``-z`` format git reverses the rename field order shown in the
+    human format (``from -> to`` becomes ``to`` ``from``) and omits the score.
     """
     if not raw:
         return []
@@ -29,27 +32,10 @@ def parse_status(raw: str) -> list[FileStatus]:
         index_status = part[0]
         worktree_status = part[1]
 
-        path = part[3:]  # Skip XY (2 chars) + space (1 char)
+        path = part[3:]  # Skip XY (2 chars) + space (1 char); for renames this is the new path
 
         if index_status in ("R", "C"):
-            if not path:  # Empty path means score wasn't separated
-                i += 1
-                continue
-            score_end = path.find(" ")
-            if score_end >= 0:
-                old_path = path[score_end + 1:]
-            else:
-                old_path = path
-            # Next part is new_path
-            i += 1
-            new_path = parts[i] if i < len(parts) else ""
-            i += 1
-            entries.append(FileStatus(
-                index_status=index_status,
-                worktree_status=worktree_status,
-                path=new_path,
-                old_path=old_path,
-            ))
+            i = _parse_rename_entry(parts, i, index_status, worktree_status, path, entries)
         else:
             i += 1
             entries.append(FileStatus(
@@ -60,6 +46,28 @@ def parse_status(raw: str) -> list[FileStatus]:
             ))
 
     return entries
+
+
+def _parse_rename_entry(
+    parts: list[str],
+    i: int,
+    index_status: str,
+    worktree_status: str,
+    new_path: str,
+    entries: list[FileStatus],
+) -> int:
+    """Parse a rename/copy entry, append it to ``entries``, and return the next index."""
+    # ``new_path`` is the destination; the next part holds the old (source) path.
+    i += 1
+    old_path = parts[i] if i < len(parts) else ""
+    i += 1
+    entries.append(FileStatus(
+        index_status=index_status,
+        worktree_status=worktree_status,
+        path=new_path,
+        old_path=old_path,
+    ))
+    return i
 
 
 def parse_push_output(raw: str) -> tuple[list[str], list[tuple[str, str]]]:

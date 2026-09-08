@@ -1,6 +1,6 @@
-"""Main application — bento-grid TUI for Git operations.
+"""Main application — two-panel TUI for Git operations.
 
-Composes the full UI layout, manages block activation (files/commits/diff),
+Composes the full UI layout, manages block activation (files/diff),
 routes keyboard events, and orchestrates data flow between presenters and widgets.
 """
 
@@ -28,34 +28,32 @@ from gitux.ui.widgets import (
     BlockContainer,
     BranchScreen,
     ChangedFilesPanel,
-    CommitLogWidget,
+    CommitLogScreen,
     CommitScreen,
     DiffViewerWidget,
     GituxFooter,
     HelpScreen,
     RepoStatsBar,
     TopAppBar,
-    extract_commit_hash,
 )
 
 _CSS_PATH: str = str(Path(__file__).parent / "gitux.tcss")
 
 _BLOCK_MAP: dict[str, dict[str, str]] = {
     "files":   {"block": "#files-block",   "content": "#changed-files"},
-    "commits": {"block": "#commits-block", "content": "#commit-log"},
     "diff":    {"block": "#diff-block",    "content": "#diff-viewer"},
 }
 
-_BLOCK_ORDER: tuple[str, ...] = ("files", "commits", "diff")
+_BLOCK_ORDER: tuple[str, ...] = ("files", "diff")
 
 
 class GituxApp(App[None]):
     """Main Textual application for GITUX.
 
-    Composes a bento-grid layout with:
+    Composes a two-panel layout with:
     - TopAppBar header (repo name, branch)
-    - RepoStatsBar (repo stats)
-    - Three BlockContainers: Changed Files, Commit Log, File Diff
+    - RepoStatsBar (repo stats + commit-step indicator)
+    - Two BlockContainers: Changed Files, File Diff
     - GituxFooter (shortcuts, version, sync status)
 
     Owns :class:`RepoPresenter` and :class:`CommitPresenter` and coordinates
@@ -69,6 +67,7 @@ class GituxApp(App[None]):
         Binding("r", "refresh", "Refresh", show=True),
         Binding("c", "open_commit", "Commit", show=True),
         Binding("b", "open_branches", "Branches", show=True),
+        Binding("l", "open_commit_log", "Log", show=True),
         Binding("q", "quit", "Quit", show=True),
         Binding("question_mark", "help", "Help", show=True),
     ]
@@ -88,22 +87,16 @@ class GituxApp(App[None]):
             with Horizontal(id="bento-top"):
                 yield BlockContainer(
                     id="files-block",
-                    title="Changed Files",
+                    title="",
                     subtitle="loading...",
                     content_widget=ChangedFilesPanel(id="changed-files"),
                 )
                 yield BlockContainer(
-                    id="commits-block",
-                    title="Commit Log",
-                    subtitle="active: ",
-                    content_widget=CommitLogWidget(id="commit-log"),
+                    id="diff-block",
+                    title="",
+                    subtitle="staged diff",
+                    content_widget=DiffViewerWidget(id="diff-viewer"),
                 )
-            yield BlockContainer(
-                id="diff-block",
-                title="File Diff",
-                subtitle="staged diff",
-                content_widget=DiffViewerWidget(id="diff-viewer"),
-            )
         yield GituxFooter()
 
     def on_mount(self) -> None:
@@ -135,6 +128,10 @@ class GituxApp(App[None]):
     def action_help(self) -> None:
         """Show the keyboard-shortcuts help modal (bound to ``?``)."""
         self.push_screen(HelpScreen())
+
+    def action_open_commit_log(self) -> None:
+        """Open the commit log overlay (bound to ``l``)."""
+        self.push_screen(CommitLogScreen(self.repo), lambda _result: None)
 
     def action_open_branches(self) -> None:
         """Open the branch-switch modal (bound to ``b``)."""
@@ -172,8 +169,6 @@ class GituxApp(App[None]):
         """Send a key event to the currently active content panel."""
         if self._active_block == "files":
             self._route_to_files(key)
-        elif self._active_block == "commits":
-            self._route_to_commits(key)
         elif self._active_block == "diff":
             self._route_to_diff(key)
 
@@ -190,44 +185,6 @@ class GituxApp(App[None]):
             panel.action_stage_all()
         elif key == "A":
             panel.action_unstage_all()
-
-    def _route_to_commits(self, key: str) -> None:
-        """Route a key press to the commit-log panel (log or detail mode)."""
-        panel = self.query_one("#commit-log", CommitLogWidget)
-        if key == "down":
-            if panel.is_detail_mode:
-                panel.scroll_down(animate=False)
-            else:
-                panel.action_cursor_down()
-        elif key == "up":
-            if panel.is_detail_mode:
-                panel.scroll_up(animate=False)
-            else:
-                panel.action_cursor_up()
-        elif key == "enter":
-            if panel.is_detail_mode:
-                return
-            line = panel.cursor_line
-            if not line:
-                return
-            commit_hash = extract_commit_hash(line)
-            if commit_hash is None:
-                return
-            details = self.repo.get_commit_details(commit_hash)
-            if not details:
-                return
-            panel.show_details(commit_hash, details)
-        elif key == "escape":
-            if panel.is_detail_mode:
-                panel.exit_details()
-        elif key == "page_down":
-            panel.scroll_page_down(animate=False)
-        elif key == "page_up":
-            panel.scroll_page_up(animate=False)
-        elif key == "home":
-            panel.scroll_home(animate=False)
-        elif key == "end":
-            panel.scroll_end(animate=False)
 
     def _route_to_diff(self, key: str) -> None:
         """Route a key press to the diff-viewer panel."""
@@ -295,7 +252,6 @@ class GituxApp(App[None]):
         repo_info = self._get_repo_info_safe()
         is_detached = self._get_detached_safe()
 
-        user = self._get_user_safe()
         head_summary = self._get_head_summary_safe()
         default_branch = self._get_default_branch_safe()
         operation = self._get_operation_state_safe()
@@ -319,14 +275,9 @@ class GituxApp(App[None]):
 
         stats_bar = self.query_one("#stats-bar", RepoStatsBar)
         stats_bar.update_stats(
-            user=user,
-            head_summary=head_summary,
-            file_counts=file_counts,
-            ahead=remote_status.ahead if remote_status else 0,
-            behind=remote_status.behind if remote_status else 0,
-            remote=remote_status.remote if remote_status else "(local)",
-            remote_branch=remote_status.branch if remote_status else "",
             repo_name=repo_info.name if repo_info else "",
+            branch=branch,
+            head_summary=head_summary,
         )
 
         changed_files = self.query_one("#changed-files", ChangedFilesPanel)
@@ -338,17 +289,6 @@ class GituxApp(App[None]):
 
         self.query_one("#files-block", BlockContainer).set_header_subtitle(
             f"{len(files)} items"
-        )
-
-        commit_log = self.query_one("#commit-log", CommitLogWidget)
-        try:
-            log_text = self._get_commit_log_safe(max_count=30)
-            commit_log.show_log(log_text)
-        except Exception:
-            commit_log.clear()
-
-        self.query_one("#commits-block", BlockContainer).set_header_subtitle(
-            f"active: {branch}" if branch else "active: "
         )
 
         self._on_file_selected()
@@ -410,17 +350,9 @@ class GituxApp(App[None]):
         except Exception as exc:
             self.notify(f"Error unstaging all: {exc}", severity="error")
 
-    def _get_commit_log_safe(self, max_count: int = 30) -> str:
-        """Return commit log text, or empty string on error."""
-        return self.repo.get_commit_log(max_count)
-
     def _get_branch_safe(self) -> str:
         """Return current branch name, or empty string on error."""
         return self.repo.get_current_branch()
-
-    def _get_user_safe(self) -> str:
-        """Return the configured git user, or empty string on error."""
-        return self.repo.get_user()
 
     def _get_head_summary_safe(self) -> HeadSummary | None:
         """Return the HEAD commit summary, or None on error."""

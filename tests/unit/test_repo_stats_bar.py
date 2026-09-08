@@ -4,22 +4,18 @@ from unittest.mock import patch
 
 import pytest
 from textual.app import App
+from textual.widgets import Static
 
-from gitux.domain import FileCounts, HeadSummary
+from gitux.domain import HeadSummary
 from gitux.ui.widgets import RepoStatsBar
 from gitux.ui.widgets.repo_stats_bar import _DEFAULT_RENDER_WIDTH, _format_relative_time
 
 T0 = 2_000_000_000
 
 FULL_FIELDS = dict(
-    user="hector",
-    head_summary=HeadSummary("66f7291", "x" * 45, T0 - 172800),
-    file_counts=FileCounts(1, 3, 15, 0),
-    ahead=0,
-    behind=0,
-    remote="origin",
-    remote_branch="main",
     repo_name="repo",
+    branch="main",
+    head_summary=HeadSummary("66f7291", "x" * 45, T0 - 172800),
 )
 
 
@@ -33,87 +29,51 @@ class TestRenderText:
     @patch("gitux.ui.widgets.repo_stats_bar.time.time", return_value=T0)
     def test_full_render_anchor(self, mock_time) -> None:
         bar = RepoStatsBar()
-        set_fields(bar, **FULL_FIELDS)
+        set_fields(bar, steps=4, **FULL_FIELDS)
         assert bar._render_text().plain == (
-            " \u25a0 REPO STATS \u2502 repo \u2502 hector \u2502 "
+            "repo \u2502 "
             + "x" * 39
-            + "\u2026 \u2502 2 days ago \u2502 +1 ~3 ?15 \u2502 \u21910 \u21930 \u2502 origin/main"
+            + "\u2026 \u2502 2 days ago \u2502 main"
         )
+        assert bar._render_steps().plain == "\u25cf  \u25cf  \u25cf  \u25cf"
 
     def test_bare_defaults(self) -> None:
         bar = RepoStatsBar()
-        assert bar._render_text().plain == (
-            " \u25a0 REPO STATS \u2502 unknown \u2502 (no commits) "
-            "\u2502 +0 ~0 ?0 \u2502 \u21910 \u21930 \u2502 (local)"
-        )
+        assert bar._render_text().plain == "(no commits)"
+        assert bar._render_steps().plain == "\u25cb  \u25cb  \u25cb  \u25cb"
 
-    def test_user_falls_back_to_unknown(self) -> None:
-        bar = RepoStatsBar()
-        set_fields(bar, user="")
-        assert bar._render_text().plain.startswith(" \u25a0 REPO STATS \u2502 unknown \u2502")
-
-    def test_files_segment_always_shown(self) -> None:
-        bar = RepoStatsBar()
-        set_fields(bar, file_counts=FileCounts(0, 0, 0, 0))
-        assert "+0 ~0 ?0" in bar._render_text().plain
-
-    def test_conflict_suffix_only_when_nonzero(self) -> None:
-        bar = RepoStatsBar()
-        set_fields(bar, file_counts=FileCounts(0, 0, 0, 1))
-        assert " !1" in bar._render_text().plain
-        bar2 = RepoStatsBar()
-        set_fields(bar2, file_counts=FileCounts(0, 0, 0, 0))
-        assert " !0" not in bar2._render_text().plain
-
-    def test_remote_slug_semantics(self) -> None:
-        bar = RepoStatsBar()
-        set_fields(bar, remote="origin", remote_branch="main")
-        assert " \u2502 origin/main" in bar._render_text().plain
-
-        bar2 = RepoStatsBar()
-        set_fields(bar2, remote="origin", remote_branch="")
-        assert " \u2502 origin" in bar2._render_text().plain
-        assert "origin/" not in bar2._render_text().plain
-
-        bar3 = RepoStatsBar()
-        with patch.object(bar3, "update"):
-            bar3.update_stats(remote="", remote_branch="develop")
-        assert bar3._remote == "(local)"
-        assert bar3._remote_branch == ""
-        assert "(local)" in bar3._render_text().plain
-
-    def test_remote_capped_to_32(self) -> None:
-        bar = RepoStatsBar()
-        set_fields(bar, remote="r" * 40, remote_branch="")
-        plain = bar._render_text().plain
-        assert ("r" * 33) not in plain
-        assert ("r" * 32) in plain
-
-    @patch("gitux.ui.widgets.repo_stats_bar.time.time", return_value=T0)
-    def test_repo_segment_first(self, mock_time) -> None:
+    def test_no_leading_icon(self) -> None:
         bar = RepoStatsBar()
         set_fields(bar, **FULL_FIELDS)
-        assert bar._render_text().plain.startswith(
-            " \u25a0 REPO STATS \u2502 repo \u2502 "
-        )
+        assert not bar._render_text().plain.startswith(" \u25a0")
 
     @patch("gitux.ui.widgets.repo_stats_bar.time.time", return_value=T0)
     def test_repo_omitted_when_empty(self, mock_time) -> None:
         bar = RepoStatsBar()
         set_fields(bar, **{**FULL_FIELDS, "repo_name": ""})
         assert bar._render_text().plain == (
-            " \u25a0 REPO STATS \u2502 hector \u2502 "
-            + "x" * 39
-            + "\u2026 \u2502 2 days ago \u2502 +1 ~3 ?15 \u2502 \u21910 \u21930 \u2502 origin/main"
+            "x" * 39
+            + "\u2026 \u2502 2 days ago \u2502 main"
         )
 
-    @patch("gitux.ui.widgets.repo_stats_bar.time.time", return_value=T0)
-    def test_repo_capped_to_32(self, mock_time) -> None:
+    def test_branch_omitted_when_empty(self) -> None:
+        bar = RepoStatsBar()
+        set_fields(bar, **{**FULL_FIELDS, "branch": ""})
+        assert "main" not in bar._render_text().plain
+
+    def test_repo_capped_to_32(self) -> None:
         bar = RepoStatsBar()
         set_fields(bar, **{**FULL_FIELDS, "repo_name": "r" * 40})
         plain = bar._render_text().plain
         assert ("r" * 33) not in plain
         assert ("r" * 32) in plain
+
+    def test_branch_capped_to_24(self) -> None:
+        bar = RepoStatsBar()
+        set_fields(bar, **{**FULL_FIELDS, "branch": "b" * 40})
+        plain = bar._render_text().plain
+        assert ("b" * 25) not in plain
+        assert ("b" * 24) in plain
 
 
 class TestSubjectCap:
@@ -133,13 +93,6 @@ class TestSubjectCap:
         assert ("s" * 39 + "\u2026") in plain
         assert "ssssssssssssssssssssssssssssssssssssssss" not in plain
 
-    @patch("gitux.ui.widgets.repo_stats_bar.time.time", return_value=T0)
-    def test_subject_200_capped_to_40(self, mock_time) -> None:
-        subject = "s" * 200
-        bar = RepoStatsBar()
-        set_fields(bar, head_summary=HeadSummary("66f7291", subject, T0))
-        assert ("s" * 39 + "\u2026") in bar._render_text().plain
-
 
 class TestWidthDrop:
     @pytest.fixture
@@ -149,57 +102,43 @@ class TestWidthDrop:
             set_fields(bar, **FULL_FIELDS)
             yield bar
 
-    def test_width_117_full_render(self, bar) -> None:
-        assert bar._render_text(width=117).plain == (
-            " \u25a0 REPO STATS \u2502 repo \u2502 hector \u2502 "
+    def test_width_112_full_render(self, bar) -> None:
+        set_fields(bar, steps=4)
+        assert bar._render_text(width=112).plain == (
+            "repo \u2502 "
             + "x" * 39
-            + "\u2026 \u2502 2 days ago \u2502 +1 ~3 ?15 \u2502 \u21910 \u21930 \u2502 origin/main"
+            + "\u2026 \u2502 2 days ago \u2502 main"
         )
+        assert bar._render_text().plain == bar._render_text(width=112).plain
+        assert bar._render_steps().plain == "\u25cf  \u25cf  \u25cf  \u25cf"
 
-    def test_width_116_keeps_ahead_behind(self, bar) -> None:
-        # Without hash, more space available, so ahead_behind is not dropped
-        assert "↑0 ↓0" in bar._render_text(width=116).plain
-
-    def test_width_110_keeps_remote(self, bar) -> None:
-        # Without hash, remote segment fits, so it's not dropped
-        assert "origin/main" in bar._render_text(width=110).plain
-
-    def test_width_100_keeps_repo(self, bar) -> None:
-        # Without hash, repo segment fits, so it's not dropped
-        plain = bar._render_text(width=100).plain
+    def test_width_75_drops_branch(self, bar) -> None:
+        plain = bar._render_text(width=75).plain
+        assert "main" not in plain
         assert "repo" in plain
-        assert "hector" in plain
+        assert " \u25cb" in bar._render_steps().plain
 
-    def test_width_93_drops_repo_keeps_user(self, bar) -> None:
-        # Repo segment drops before user (AC-US5-4)
-        plain = bar._render_text(width=93).plain
+    def test_width_68_drops_repo(self, bar) -> None:
+        plain = bar._render_text(width=68).plain
         assert "repo" not in plain
-        assert "hector" in plain
+        assert "2 days ago" in plain
 
-    def test_width_85_keeps_files(self, bar) -> None:
-        # Without hash, files segment fits, so it's not dropped
-        assert "+1 ~3 ?15" in bar._render_text(width=85).plain
+    def test_width_61_drops_date(self, bar) -> None:
+        plain = bar._render_text(width=61).plain
+        assert "2 days ago" not in plain
+        assert ("x" * 39 + "\u2026") in plain
 
-    def test_width_73_keeps_date(self, bar) -> None:
-        # Without hash, date segment fits, so it's not dropped
-        assert "2 days ago" in bar._render_text(width=73).plain
+    def test_width_48_elides_head_subject(self, bar) -> None:
+        plain = bar._render_text(width=48).plain
+        assert ("x" * 40) not in plain  # subject truncated, not full 40 chars
+        assert "x" in plain
+        assert " \u25cb" in bar._render_steps().plain
 
-    def test_width_60_elides_subject(self, bar) -> None:
-        # Without hash, more space, subject is less elided or not at all
-        plain = bar._render_text(width=60).plain
-        # Subject should still be present but possibly elided
-        assert "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" in plain or "x" in plain
-
-    def test_width_21_hash_only(self, bar) -> None:
-        # Without hash, at width 21 we just get the prefix + some text
+    def test_width_21_dots_present(self, bar) -> None:
         plain = bar._render_text(width=21).plain
-        assert "REPO STATS" in plain
-
-    def test_boundary_inclusive(self, bar) -> None:
-        assert bar._render_text(width=117).plain == bar._render_text().plain
-        assert "↑" in bar._render_text(width=117).plain
-        # At width 116, with no hash, the ahead_behind segment still fits
-        assert "↑" in bar._render_text(width=116).plain
+        steps_plain = bar._render_steps().plain
+        assert " \u25cf" in steps_plain or " \u25cb" in steps_plain
+        assert "STATS" not in plain
 
     def test_unmounted_bare_render_is_full(self) -> None:
         bar = RepoStatsBar()
@@ -207,15 +146,42 @@ class TestWidthDrop:
         with patch("gitux.ui.widgets.repo_stats_bar.time.time", return_value=T0):
             plain = bar._render_text().plain
         assert _DEFAULT_RENDER_WIDTH == 200
-        assert "origin/main" in plain
-        assert "hector" in plain
+        assert "main" in plain
         assert "repo" in plain
+        assert " \u25cb" in bar._render_steps().plain
+
+
+class TestSteps:
+    def test_steps_override(self) -> None:
+        bar = RepoStatsBar()
+        bar.update_stats(steps=2)
+        assert bar._steps == 2
+
+    @pytest.mark.parametrize("steps", [0, 1, 2, 3, 4])
+    def test_dot_counts(self, steps) -> None:
+        bar = RepoStatsBar()
+        set_fields(bar, steps=steps, **FULL_FIELDS)
+        steps_plain = bar._render_steps().plain
+        assert steps_plain.count("\u25cf") == steps
+        assert steps_plain.count("\u25cb") == 4 - steps
+
+    def test_steps_override_renders(self) -> None:
+        bar = RepoStatsBar()
+        bar.update_stats(steps=2)
+        steps_plain = bar._render_steps().plain
+        assert steps_plain.count("\u25cf") == 2
+        assert steps_plain.count("\u25cb") == 2
+        bar2 = RepoStatsBar()
+        set_fields(bar2, steps=4, **FULL_FIELDS)
+        steps_plain2 = bar2._render_steps().plain
+        assert steps_plain2.count("\u25cf") == 4
+        assert steps_plain2.count("\u25cb") == 0
 
 
 class TestNoCommits:
     def test_head_slot_no_commits_and_date_omitted(self) -> None:
         bar = RepoStatsBar()
-        set_fields(bar, user="hector", head_summary=None)
+        set_fields(bar, repo_name="repo", branch="main", head_summary=None)
         plain = bar._render_text().plain
         assert "(no commits)" in plain
         assert "ago" not in plain
@@ -230,36 +196,22 @@ class TestUpdateStats:
             await app.mount(bar)
             with patch("gitux.ui.widgets.repo_stats_bar.time.time", return_value=T0):
                 bar.update_stats(
-                    user="hector",
+                    repo_name="repo",
+                    branch="main",
                     head_summary=HeadSummary("66f7291", "x" * 45, T0 - 172800),
-                    file_counts=FileCounts(1, 3, 15, 0),
-                    remote="origin",
-                    remote_branch="main",
                 )
-            assert bar.content.plain.startswith(
-                " \u25a0 REPO STATS \u2502 hector \u2502 "
+            left = bar.query_one("#stats-left", Static)
+            assert left.content.plain.startswith(
+                "repo \u2502 "
             )
 
-    def test_update_stats_no_remote_falls_back_to_local(self) -> None:
+    def test_update_stats_defaults(self) -> None:
         bar = RepoStatsBar()
-        with patch.object(bar, "update"):
-            bar.update_stats(remote="", remote_branch="develop")
-        assert bar._remote == "(local)"
-        assert bar._remote_branch == ""
-        assert "(local)" in bar._render_text().plain
-
-    def test_update_stats_remote_with_branch(self) -> None:
-        bar = RepoStatsBar()
-        with patch.object(bar, "update"):
-            bar.update_stats(remote="origin", remote_branch="main")
-        assert "origin/main" in bar._render_text().plain
-
-    def test_update_stats_defaults_file_counts(self) -> None:
-        bar = RepoStatsBar()
-        with patch.object(bar, "update"):
-            bar.update_stats()
-        assert bar._file_counts is None
-        assert "+0 ~0 ?0" in bar._render_text().plain
+        bar.update_stats()
+        assert bar._repo_name == ""
+        assert bar._branch == ""
+        assert bar._head_summary is None
+        assert bar._render_text().plain == "(no commits)"
 
 
 class TestFormatRelativeTime:

@@ -73,7 +73,7 @@ gitux --version
 
 | Key | Action |
 |-----|--------|
-| `Tab` | Next section (Files / Commits / Diff) |
+| `Tab` | Next section (Files / Diff) |
 | `↑` / `↓` or `j` / `k` | Scroll active section |
 | `s` / `Enter` | Stage / unstage file |
 | `a` / `A` | Stage all / unstage all files |
@@ -82,6 +82,7 @@ gitux --version
 | `Ctrl+p` | Push to remote |
 | `r` | Refresh status |
 | `b` | Branches panel |
+| `l` | Commit log (overlay) |
 | `?` | Show help |
 | `q` | Quit GITUX |
 

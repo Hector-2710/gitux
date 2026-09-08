@@ -2,6 +2,7 @@ from gitux.ui.widgets.block_container import BlockContainer
 from gitux.ui.widgets.branch_screen import BranchScreen
 from gitux.ui.widgets.changed_files import ChangedFilesPanel
 from gitux.ui.widgets.commit_log import CommitLogWidget, extract_commit_hash
+from gitux.ui.widgets.commit_log_screen import CommitLogScreen
 from gitux.ui.widgets.commit_screen import CommitScreen
 from gitux.ui.widgets.diff_viewer import DiffViewerWidget
 from gitux.ui.widgets.gitux_footer import GituxFooter
@@ -14,6 +15,7 @@ __all__ = [
     "BranchScreen",
     "ChangedFilesPanel",
     "CommitLogWidget",
+    "CommitLogScreen",
     "CommitScreen",
     "DiffViewerWidget",
     "GituxFooter",
