@@ -1,6 +1,6 @@
 """Repo stats bar — two-line repository status below the top app bar.
 
-Left side shows ``repo │ hash subject │ relative time │ branch``; the four
+Left side shows ``repo │ subject │ relative time │ branch``; the four
 commit-step indicator dots are rendered large on the right edge. The bar uses
 rounded borders to match the rest of the UI.
 """
@@ -129,7 +129,7 @@ class RepoStatsBar(Vertical):
                 subject = subject[: _MAX_HEAD_SUBJECT_CHARS - 1] + "\u2026"
             segments.append({
                 "name": "head",
-                "plain": f"{summary.short_hash} {subject}",
+                "plain": subject,
                 "subject": subject,
                 "style": "#e4e1ed",
             })

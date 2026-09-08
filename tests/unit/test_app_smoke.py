@@ -340,4 +340,3 @@ async def test_refresh_all_wires_head_hash():
         stats = app.query_one("#stats-bar")
         left = stats.query_one("#stats-left")
         assert "feat: x" in left.content.plain
-        assert "66f7291" in left.content.plain

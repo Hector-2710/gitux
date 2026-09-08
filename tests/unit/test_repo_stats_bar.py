@@ -31,7 +31,7 @@ class TestRenderText:
         bar = RepoStatsBar()
         set_fields(bar, steps=4, **FULL_FIELDS)
         assert bar._render_text().plain == (
-            "repo \u2502 66f7291 "
+            "repo \u2502 "
             + "x" * 39
             + "\u2026 \u2502 2 days ago \u2502 main"
         )
@@ -52,8 +52,7 @@ class TestRenderText:
         bar = RepoStatsBar()
         set_fields(bar, **{**FULL_FIELDS, "repo_name": ""})
         assert bar._render_text().plain == (
-            "66f7291 "
-            + "x" * 39
+            "x" * 39
             + "\u2026 \u2502 2 days ago \u2502 main"
         )
 
@@ -106,31 +105,31 @@ class TestWidthDrop:
     def test_width_112_full_render(self, bar) -> None:
         set_fields(bar, steps=4)
         assert bar._render_text(width=112).plain == (
-            "repo \u2502 66f7291 "
+            "repo \u2502 "
             + "x" * 39
             + "\u2026 \u2502 2 days ago \u2502 main"
         )
         assert bar._render_text().plain == bar._render_text(width=112).plain
         assert bar._render_steps().plain == "\u25cf  \u25cf  \u25cf  \u25cf"
 
-    def test_width_84_drops_branch(self, bar) -> None:
-        plain = bar._render_text(width=84).plain
+    def test_width_75_drops_branch(self, bar) -> None:
+        plain = bar._render_text(width=75).plain
         assert "main" not in plain
         assert "repo" in plain
         assert " \u25cb" in bar._render_steps().plain
 
-    def test_width_77_drops_repo(self, bar) -> None:
-        plain = bar._render_text(width=77).plain
+    def test_width_68_drops_repo(self, bar) -> None:
+        plain = bar._render_text(width=68).plain
         assert "repo" not in plain
         assert "2 days ago" in plain
 
-    def test_width_70_drops_date(self, bar) -> None:
-        plain = bar._render_text(width=70).plain
+    def test_width_61_drops_date(self, bar) -> None:
+        plain = bar._render_text(width=61).plain
         assert "2 days ago" not in plain
         assert ("x" * 39 + "\u2026") in plain
 
-    def test_width_57_elides_head_subject(self, bar) -> None:
-        plain = bar._render_text(width=57).plain
+    def test_width_48_elides_head_subject(self, bar) -> None:
+        plain = bar._render_text(width=48).plain
         assert ("x" * 40) not in plain  # subject truncated, not full 40 chars
         assert "x" in plain
         assert " \u25cb" in bar._render_steps().plain
@@ -203,7 +202,7 @@ class TestUpdateStats:
                 )
             left = bar.query_one("#stats-left", Static)
             assert left.content.plain.startswith(
-                "repo \u2502 66f7291 "
+                "repo \u2502 "
             )
 
     def test_update_stats_defaults(self) -> None:
