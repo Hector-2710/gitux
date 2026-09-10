@@ -20,3 +20,5 @@ AGENTS.md
 # Metrics
 .scannerwork
 sonar-project.properties
+coverage.xml
+.coverage
