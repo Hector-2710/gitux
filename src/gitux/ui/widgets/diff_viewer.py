@@ -6,11 +6,13 @@ from typing import Self, override
 from rich.text import Text
 from textual.widgets import RichLog
 
-_MAX_DIFF_LINES: int = 500
+_MAX_DIFF_LINES: int = 2000
 
 _COLORS: dict[str, str] = {
     "addition": "#10b981",
+    "addition_bg": "#123a2a",
     "deletion": "#ffb4ab",
+    "deletion_bg": "#3a1d1d",
     "header": "#c0c1ff",
     "default": "#e4e1ed",
     "dim": "#c7c4d7",
@@ -50,6 +52,17 @@ def _parse_hunk_header(line: str) -> tuple[int, int]:
     match = re.search(r"\+(\d+)", line)
     new_start = int(match.group(1)) if match else 0
     return old_start, new_start
+
+
+def _format_gutter(old: int | None, new: int | None) -> str:
+    """Format the line-number gutter.
+
+    Shows a single line number: new for context/added lines, old for
+    deleted lines. The hunk header (``@@ -old +new @@``) carries the
+    overall old→new mapping.
+    """
+    num = new if new is not None else old
+    return f"{num:>5} │ "
 
 
 class DiffViewerWidget(RichLog):
@@ -95,26 +108,30 @@ class DiffViewerWidget(RichLog):
             if line.startswith("@@"):
                 old_lineno, new_lineno = _parse_hunk_header(line)
                 text.append(f"  {line}\n", style=_COLORS["header"])
+            elif _is_diff_metadata(line):
+                # diff --git, index, ---, +++, modes, renames... hidden.
+                continue
+            elif line.startswith("\\"):
+                # \ No newline at end of file — special marker, no counter advance.
+                text.append(f"  {line}\n", style=f"italic {_COLORS['dim']}")
             elif line.startswith("+"):
-                content = line[1:]  
+                content = line[1:]
                 text.append(
-                    f"  {new_lineno:>4} +{content}\n",
-                    style=_COLORS["addition"],
+                    _format_gutter(None, new_lineno) + f"+{content}\n",
+                    style=f"{_COLORS['addition']} on {_COLORS['addition_bg']}",
                 )
                 new_lineno += 1
             elif line.startswith("-"):
-                content = line[1:]  
+                content = line[1:]
                 text.append(
-                    f"  {old_lineno:>4} -{content}\n",
-                    style=_COLORS["deletion"],
+                    _format_gutter(old_lineno, None) + f"-{content}\n",
+                    style=f"{_COLORS['deletion']} on {_COLORS['deletion_bg']}",
                 )
                 old_lineno += 1
-            elif _is_diff_metadata(line):
-                continue  
             else:
                 content = line[1:] if line.startswith(" ") else line
                 text.append(
-                    f"  {new_lineno:>4} {content}\n",
+                    _format_gutter(old_lineno, new_lineno) + f" {content}\n",
                     style=_COLORS["default"],
                 )
                 old_lineno += 1

@@ -437,7 +437,7 @@ class TestGetUntrackedFileDiff:
         result = get_untracked_file_diff("src/hello.txt")
         assert result == self.DIFF
         assert mock_run.call_args[0][0] == [
-            "git", "diff", "--no-index", "/dev/null", "src/hello.txt",
+            "git", "diff", "--no-index", "-U999", "/dev/null", "src/hello.txt",
         ]
 
     @patch("gitux.git.runner.subprocess.run")
@@ -485,7 +485,7 @@ class TestGetUntrackedFileDiff:
         mock_run.return_value = MagicMock(returncode=1, stdout=self.DIFF, stderr="")
         get_untracked_file_diff("new dir/spaced file.txt")
         assert mock_run.call_args[0][0] == [
-            "git", "diff", "--no-index", "/dev/null", "new dir/spaced file.txt",
+            "git", "diff", "--no-index", "-U999", "/dev/null", "new dir/spaced file.txt",
         ]
 
     @patch("gitux.git.runner.subprocess.run")

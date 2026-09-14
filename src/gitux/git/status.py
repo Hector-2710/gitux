@@ -32,14 +32,14 @@ def unstage(paths: list[str]) -> None:
 
 def get_staged_diff() -> str:
     """Return the combined diff of all staged changes."""
-    result = _run(["diff", "--cached"])
+    result = _run(["diff", "--cached", "-U999"])
     return result.stdout
 
 
 def get_file_diff(path: str) -> str:
     """Return the unstaged diff for a single file."""
     try:
-        result = _run(["diff", "--", path])
+        result = _run(["diff", "-U999", "--", path])
         return result.stdout
     except GitError:
         return ""
@@ -48,7 +48,7 @@ def get_file_diff(path: str) -> str:
 def get_staged_file_diff(path: str) -> str:
     """Return the staged diff for a single file."""
     try:
-        result = _run(["diff", "--cached", "--", path])
+        result = _run(["diff", "--cached", "-U999", "--", path])
         return result.stdout
     except GitError:
         return ""
@@ -58,7 +58,7 @@ def get_untracked_file_diff(path: str) -> str:
     """Unified diff of an untracked file vs /dev/null; "" for binary or empty files."""
     try:
         result = _run_tolerant(
-            ["diff", "--no-index", "/dev/null", path], allowed_return_codes={0, 1},
+            ["diff", "--no-index", "-U999", "/dev/null", path], allowed_return_codes={0, 1},
         )
     except GitError:
         return ""
