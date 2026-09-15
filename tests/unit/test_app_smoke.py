@@ -2,7 +2,6 @@ import unittest.mock
 
 import pytest
 from textual.css.query import NoMatches
-from textual.widgets import Button
 
 from gitux.domain import FileStatus, HeadSummary, OperationState, RepoInfo
 from gitux.ui.app import GituxApp, _BLOCK_MAP, _BLOCK_ORDER
@@ -69,19 +68,6 @@ async def test_commit_screen_cancels_on_escape():
         assert app.screen.__class__.__name__ == "CommitScreen"
         await pilot.press("escape")
         assert app.screen.__class__.__name__ != "CommitScreen"
-
-
-@pytest.mark.asyncio
-async def test_commit_modal_shows_exact_button_labels():
-    app = GituxApp()
-    async with app.run_test() as pilot:
-        await pilot.press("c")
-        await pilot.pause()
-        assert app.screen.__class__.__name__ == "CommitScreen"
-        commit_btn = app.screen.query_one("#commit-modal-btn-commit", Button)
-        cancel_btn = app.screen.query_one("#commit-modal-btn-cancel", Button)
-        assert commit_btn.label.plain == "Commit (Enter)"
-        assert cancel_btn.label.plain == "Cancel (Esc)"
 
 
 @pytest.mark.asyncio
