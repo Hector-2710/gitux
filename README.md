@@ -1,7 +1,7 @@
 <h1 align="center">gitux</h1>
 
 <p align="center">
-  <img src="assets/gitux.png" alt="gitux logo" width="220"/>
+  <img src="assets/gitux-2.png" alt="gitux logo" width="220"/>
 </p>
 
 <p align="center">
@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <b>Git in the terminal — without leaving it, and without the pain.</b>
+  <b>Git in the terminal — A beautiful, minimalist TUI for Git..</b>
 </p>
 
 ---

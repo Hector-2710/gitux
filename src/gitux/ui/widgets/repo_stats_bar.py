@@ -145,7 +145,7 @@ class RepoStatsBar(Vertical):
             segments.append({
                 "name": "branch",
                 "plain": self._branch[:_MAX_BRANCH_CHARS],
-                "style": "bold #d19dfb",
+                "style": "bold #06B6D4",
             })
 
         return segments

@@ -184,7 +184,7 @@ async def test_commit_log_modal_css():
         assert modal.styles.max_height.value == 85.0
         assert app.screen.styles.align == ("center", "middle")
         background = app.screen.styles.background
-        assert background.rgb == (0x22, 0x1D, 0x2F)
+        assert background.rgb == (0x18, 0x16, 0x22)
         assert background.a == pytest.approx(0.85)
 
 

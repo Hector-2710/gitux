@@ -74,7 +74,7 @@ class TopAppBar(Static):
             if self._is_detached:
                 text.append(f" ({branch})", style="#ffb4ab on #93000a")
             else:
-                text.append(f" [{branch}{star}]", style="#221d2f on #d19dfb")
+                text.append(f" [{branch}{star}]", style="#06B6D4 on #201e2a")
         text.append(" \u25cf", style=_WIP_DOT_STYLE[self._wip_state])
         text.append("  ", style="")
         text.append("\u2699", style="#c7c4d7")

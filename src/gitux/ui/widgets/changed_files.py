@@ -12,8 +12,8 @@ _STATUS_COLORS: dict[str, str] = {
     "M": "#ffb783",
     "A": "#10b981",
     "D": "#ffb4ab",
-    "R": "#d19dfb",
-    "C": "#d19dfb",
+    "R": "#06B6D4",
+    "C": "#06B6D4",
     "?": "#908fa0",
     "!": "#c7c4d7",
 }
@@ -123,7 +123,7 @@ class ChangedFilesPanel(RichLog):
         staged = [f for f in self._files if f.is_staged]
         unstaged = [f for f in self._files if f.is_unstaged]
 
-        text.append(" \u25a0 STAGED", style="bold #d19dfb")
+        text.append(" \u25a0 STAGED", style="bold #06B6D4")
         text.append("\n")
 
         if staged:
