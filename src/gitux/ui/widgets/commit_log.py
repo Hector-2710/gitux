@@ -137,7 +137,7 @@ class CommitLogWidget(RichLog):
         result = Text()
 
         if cursor:
-            result.append(" \u276f", style="bold #c0c1ff")
+            result.append(" \u276f", style="bold #9c60ec")
         else:
             result.append("  ")
 
@@ -155,7 +155,7 @@ class CommitLogWidget(RichLog):
 
         for ch in graph_part:
             if ch == "*":
-                result.append("*", style="bold #c0c1ff")
+                result.append("*", style="bold #9c60ec")
             elif ch in "|/\\":
                 result.append(ch, style="#908fa0")
             else:

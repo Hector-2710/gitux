@@ -1,5 +1,5 @@
 Screen {
-    background: #13131b;
+    background: #221d2f;
 }
 
 * {
@@ -9,7 +9,7 @@ Screen {
 #top-bar {
     dock: top;
     height: 1;
-    background: #1f1f27;
+    background: #311c53;
     color: #e4e1ed;
     padding: 0 1;
     text-style: bold;
@@ -18,9 +18,9 @@ Screen {
 #stats-bar {
     dock: top;
     height: 3;
-    background: #0d0d15;
+    background: #1a1526;
     color: #c7c4d7;
-    border: round #464554;
+    border: round #4a3a6b;
     padding: 0 1;
     layout: horizontal;
 }
@@ -59,18 +59,18 @@ Screen {
 }
 
 .block-active {
-    border: round #c0c1ff;
-    background: #0d0d15;
+    border: round #9c60ec;
+    background: #1a1526;
 }
 
 .block-inactive {
-    border: round #464554;
-    background: #0d0d15;
+    border: round #4a3a6b;
+    background: #1a1526;
 }
 
 .block-header {
     height: 1;
-    background: #34343d;
+    background: #3d2a63;
     padding: 0 1;
     text-style: bold;
 }
@@ -93,7 +93,7 @@ Screen {
 }
 
 .staged-section {
-    color: #c0c1ff;
+    color: #d19dfb;
 }
 
 .unstaged-section {
@@ -103,8 +103,8 @@ Screen {
 .file-status-M { color: #ffb783; }
 .file-status-A { color: #10b981; }
 .file-status-D { color: #ffb4ab; }
-.file-status-R { color: #c0c1ff; }
-.file-status-C { color: #c0c1ff; }
+.file-status-R { color: #d19dfb; }
+.file-status-C { color: #d19dfb; }
 .file-status-unknown { color: #908fa0; }
 
 #diff-viewer {
@@ -118,22 +118,22 @@ Screen {
 GituxFooter {
     dock: bottom;
     height: 1;
-    background: #1f1f27;
+    background: #311c53;
     color: #c7c4d7;
     padding: 0 1;
 }
 
 #commit-modal {
-    background: #0d0d15;
-    border: round #c0c1ff;
+    background: #1a1526;
+    border: round #9c60ec;
     color: #e4e1ed;
     width: 60%;
     height: 13;
 }
 
 #help-container {
-    background: #0d0d15;
-    border: round #c0c1ff;
+    background: #1a1526;
+    border: round #9c60ec;
     color: #e4e1ed;
     width: 64;
     max-width: 90%;
@@ -146,7 +146,7 @@ GituxFooter {
     text-style: bold;
     color: #e4e1ed;
     text-align: center;
-    background: #34343d;
+    background: #3d2a63;
     padding: 0 1;
     height: 1;
 }
@@ -170,14 +170,14 @@ GituxFooter {
 }
 
 CommitScreen {
-    background: #13131b 85%;
+    background: #221d2f 85%;
     align: center middle;
     height: 3;
 }
 
 #commit-modal {
-    background: #0d0d15;
-    border: round #c0c1ff;
+    background: #1a1526;
+    border: round #9c60ec;
     color: #e4e1ed;
     width: 50;
     max-width: 90%;
@@ -188,7 +188,7 @@ CommitScreen {
 #commit-modal-title {
     text-style: bold;
     color: #e4e1ed;
-    background: #34343d;
+    background: #3d2a63;
     padding: 0 1;
     height: 1;
     text-align: center;
@@ -197,35 +197,35 @@ CommitScreen {
 #commit-modal-input {
     width: 100%;
     height: 1fr;
-    background: #1f1f27;
+    background: #311c53;
     color: #e4e1ed;
-    border: round #464554;
+    border: round #4a3a6b;
     padding: 0 1;
     margin: 1;
 }
 
 #commit-modal-input:focus {
-    border: round #c0c1ff;
+    border: round #9c60ec;
 }
 
 #commit-modal-input .input--cursor {
-    color: #13131b;
-    background: #c0c1ff;
+    color: #221d2f;
+    background: #d19dfb;
 }
 
 HelpScreen {
-    background: #13131b 80%;
+    background: #221d2f 80%;
     align: center middle;
 }
 
 BranchScreen {
-    background: #13131b 85%;
+    background: #221d2f 85%;
     align: center middle;
 }
 
 #branch-modal {
-    background: #0d0d15;
-    border: round #c0c1ff;
+    background: #1a1526;
+    border: round #9c60ec;
     color: #e4e1ed;
     width: 50;
     max-width: 90%;
@@ -236,23 +236,23 @@ BranchScreen {
 #branch-modal-title {
     text-style: bold;
     color: #e4e1ed;
-    background: #34343d;
+    background: #3d2a63;
     padding: 0 1;
     text-align: center;
     height: 1;
 }
 
 #branch-option-list {
-    background: #1f1f27;
+    background: #311c53;
     color: #e4e1ed;
-    border: round #464554;
+    border: round #4a3a6b;
     height: auto;
     max-height: 60%;
     margin: 1 1 0 1;
 }
 
 #branch-option-list > .option-list--option-highlighted {
-    background: #3a4a5f;
+    background: #5828a5;
     color: #e4e1ed;
 }
 
@@ -265,13 +265,13 @@ BranchScreen {
 }
 
 CommitLogScreen {
-    background: #13131b 85%;
+    background: #221d2f 85%;
     align: center middle;
 }
 
 #commit-log-modal {
-    background: #0d0d15;
-    border: round #c0c1ff;
+    background: #1a1526;
+    border: round #9c60ec;
     color: #e4e1ed;
     width: 70%;
     max-width: 90%;
@@ -291,8 +291,8 @@ CommitLogScreen {
 }
 
 Toast {
-    background: #1f1f27;
-    border: round #464554;
+    background: #311c53;
+    border: round #4a3a6b;
     padding: 0 1;
 }
 

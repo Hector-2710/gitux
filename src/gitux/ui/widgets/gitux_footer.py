@@ -31,7 +31,7 @@ class GituxFooter(Static):
         """Re-render the footer content from the current state."""
         t = Text()
 
-        t.append(f" GITUX v{__version__} \u2502", style="bold #c7c4d7")
-        t.append("[?] Help", style="#b7c8e1")
+        t.append(f" GITUX v{__version__} \u2502", style="bold #d19dfb")
+        t.append("[?] Help", style="#d19dfb")
 
         self.update(t)

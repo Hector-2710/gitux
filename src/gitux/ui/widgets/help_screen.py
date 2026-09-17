@@ -31,7 +31,7 @@ class HelpScreen(ModalScreen[None]):
 
         def _section(title: str) -> None:
             """Append a section header line."""
-            t.append(f"\n  {title}\n", style="bold #6366f1")
+            t.append(f"\n  {title}\n", style="bold #9c60ec")
 
         def _shortcut(key: str, desc: str) -> None:
             """Append a shortcut row line."""

@@ -13,10 +13,10 @@ _COLORS: dict[str, str] = {
     "addition_bg": "#123a2a",
     "deletion": "#ffb4ab",
     "deletion_bg": "#3a1d1d",
-    "header": "#c0c1ff",
+    "header": "#9c60ec",
     "default": "#e4e1ed",
     "dim": "#c7c4d7",
-    "line_num": "#464554",
+    "line_num": "#4a3a6b",
 }
 
 _DIFF_METADATA_PREFIXES: tuple[str, ...] = (

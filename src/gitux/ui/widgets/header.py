@@ -59,7 +59,7 @@ class TopAppBar(Static):
     def _render_text(self) -> Text:
         """Render the header line as rich text."""
         text = Text()
-        text.append(" \u25c9", style="bold #c0c1ff")
+        text.append(" \u25c9", style="bold #9c60ec")
         text.append(" GITUX // ", style="#e4e1ed")
         repo = self._repo_name[:_MAX_REPO_CHARS]
         if self._owner:
@@ -74,7 +74,7 @@ class TopAppBar(Static):
             if self._is_detached:
                 text.append(f" ({branch})", style="#ffb4ab on #93000a")
             else:
-                text.append(f" [{branch}{star}]", style="#1000a9 on #c0c1ff")
+                text.append(f" [{branch}{star}]", style="#221d2f on #d19dfb")
         text.append(" \u25cf", style=_WIP_DOT_STYLE[self._wip_state])
         text.append("  ", style="")
         text.append("\u2699", style="#c7c4d7")
