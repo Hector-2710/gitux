@@ -22,6 +22,7 @@ from gitux.domain import (
     RepoInfo,
     derive_wip_state,
 )
+from gitux.git.status import BINARY_DIFF_MARKER
 from gitux.presenter.commit_presenter import CommitPresenter
 from gitux.presenter.repo_presenter import RepoPresenter
 from gitux.ui.widgets import (
@@ -313,8 +314,10 @@ class GituxApp(App[None]):
             return
 
         diff_text = self.presenter.get_diff(file)
-        if not diff_text:
+        if diff_text == BINARY_DIFF_MARKER:
             diff_viewer.show_binary_placeholder()
+        elif not diff_text:
+            diff_viewer.show_no_diff_placeholder()
         else:
             diff_viewer.show_diff(diff_text)
         self.query_one("#diff-block", BlockContainer).set_header_subtitle(file.path)

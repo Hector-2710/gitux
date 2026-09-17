@@ -104,6 +104,31 @@ async def test_placeholder_shows_at_top():
         assert viewer.scroll_y == 0
 
 
+@pytest.mark.asyncio
+async def test_show_binary_placeholder_message():
+    """Binary files show the binary-specific placeholder."""
+    app = _DiffApp()
+    async with app.run_test(size=(100, 40)) as pilot:
+        viewer = app.query_one("#diff-viewer", DiffViewerWidget)
+        viewer.show_binary_placeholder()
+        await pilot.pause()
+        rendered = [strip.text for strip in viewer.lines if strip.text]
+        assert "Binary file, no diff available" in rendered[0]
+
+
+@pytest.mark.asyncio
+async def test_show_no_diff_placeholder_message():
+    """Empty files / errors show a generic "No diff available" placeholder."""
+    app = _DiffApp()
+    async with app.run_test(size=(100, 40)) as pilot:
+        viewer = app.query_one("#diff-viewer", DiffViewerWidget)
+        viewer.show_no_diff_placeholder()
+        await pilot.pause()
+        rendered = [strip.text for strip in viewer.lines if strip.text]
+        assert "No diff available" in rendered[0]
+        assert "Binary" not in rendered[0]
+
+
 def _rendered_lines(viewer: DiffViewerWidget) -> list[str]:
     """Return the plain text of every rendered line in the viewer."""
     return [strip.text for strip in viewer.lines if strip.text]

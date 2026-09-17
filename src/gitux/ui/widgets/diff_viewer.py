@@ -151,6 +151,10 @@ class DiffViewerWidget(RichLog):
         """Show placeholder for binary files."""
         self._show_placeholder("Binary file, no diff available")
 
+    def show_no_diff_placeholder(self) -> None:
+        """Show placeholder when no diff is available (empty file, error)."""
+        self._show_placeholder("No diff available")
+
     @override
     def clear(self) -> Self:
         """Clear the diff display."""

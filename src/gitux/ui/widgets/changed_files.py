@@ -14,7 +14,7 @@ _STATUS_COLORS: dict[str, str] = {
     "D": "#ffb4ab",
     "R": "#06B6D4",
     "C": "#06B6D4",
-    "?": "#908fa0",
+    "u": "#22c55e",
     "!": "#c7c4d7",
 }
 

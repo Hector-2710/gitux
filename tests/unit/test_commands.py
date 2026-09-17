@@ -32,6 +32,7 @@ from gitux.git.commands import (
     switch_branch,
     unstage,
 )
+from gitux.git.status import BINARY_DIFF_MARKER
 
 
 class TestGetStatus:
@@ -441,13 +442,13 @@ class TestGetUntrackedFileDiff:
         ]
 
     @patch("gitux.git.runner.subprocess.run")
-    def test_binary_returns_empty(self, mock_run) -> None:
+    def test_binary_returns_marker(self, mock_run) -> None:
         mock_run.return_value = MagicMock(
             returncode=1,
             stdout="Binary files /dev/null and b/x differ\n",
             stderr="",
         )
-        assert get_untracked_file_diff("x") == ""
+        assert get_untracked_file_diff("x") == BINARY_DIFF_MARKER
 
     @patch("gitux.git.runner.subprocess.run")
     def test_empty_file_metadata_only_returns_empty(self, mock_run) -> None:

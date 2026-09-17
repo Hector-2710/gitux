@@ -25,8 +25,14 @@ class FileStatus:
 
     @property
     def display_status(self) -> str:
-        """Return the primary status character for display."""
-        if self.index_status not in (" ", "?"):
+        """Return the primary status character for display.
+
+        Git porcelain uses ``?`` for untracked files.  We surface ``u`` instead
+        so the UI label reads *untracked* rather than the opaque ``?``.
+        """
+        if self.index_status == "?":
+            return "u"
+        if self.index_status not in (" ",):
             return self.index_status
         return self.worktree_status
 

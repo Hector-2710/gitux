@@ -31,7 +31,7 @@ class TestParseStatus:
         assert f.index_status == "?"
         assert f.worktree_status == "?"
         assert f.is_staged is False
-        assert f.display_status == "?"
+        assert f.display_status == "u"
 
     def test_renamed_file(self) -> None:
         # Real git -z format: XY + space + new path, then old path (order reversed

@@ -5,6 +5,10 @@ from gitux.git.exceptions import GitError
 from gitux.git.parser import parse_status
 from gitux.git.runner import _run, _run_tolerant
 
+#: Sentinel returned by :func:`get_untracked_file_diff` for binary files so
+#: callers can distinguish "binary, no diff" from "empty file, no diff".
+BINARY_DIFF_MARKER: str = "\x00BINARY\x00"
+
 
 def get_status() -> list[FileStatus]:
     """Return all file statuses using ``git status --porcelain=v1 -z -uall``.
@@ -55,7 +59,11 @@ def get_staged_file_diff(path: str) -> str:
 
 
 def get_untracked_file_diff(path: str) -> str:
-    """Unified diff of an untracked file vs /dev/null; "" for binary or empty files."""
+    """Unified diff of an untracked file vs /dev/null.
+
+    Returns the diff text, ``BINARY_DIFF_MARKER`` for binary files, or ``""``
+    for empty files and errors.
+    """
     try:
         result = _run_tolerant(
             ["diff", "--no-index", "-U999", "/dev/null", path], allowed_return_codes={0, 1},
@@ -63,7 +71,7 @@ def get_untracked_file_diff(path: str) -> str:
     except GitError:
         return ""
     if any(line.startswith("Binary files ") for line in result.stdout.splitlines()):
-        return ""
+        return BINARY_DIFF_MARKER
     if not any(line.startswith("@@") for line in result.stdout.splitlines()):
         return ""
     return result.stdout

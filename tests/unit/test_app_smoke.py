@@ -4,6 +4,7 @@ import pytest
 from textual.css.query import NoMatches
 
 from gitux.domain import FileStatus, HeadSummary, OperationState, RepoInfo
+from gitux.git.status import BINARY_DIFF_MARKER
 from gitux.ui.app import GituxApp, _BLOCK_MAP, _BLOCK_ORDER
 from gitux.ui.widgets import RepoStatsBar
 
@@ -304,6 +305,30 @@ async def test_block_headers_subtitle_only():
             app.query_one("#diff-block").query_one(".block-header").content
             == "src/file_000.py"
         )
+
+
+@pytest.mark.asyncio
+async def test_file_selected_distinguishes_binary_from_empty():
+    """Binary files show the binary placeholder; empty files show the generic one."""
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        _seed_files(app, count=1)
+        changed_files = app.query_one("#changed-files")
+        diff_viewer = app.query_one("#diff-viewer")
+        changed_files._cursor_index = 0
+
+        with unittest.mock.patch.object(
+            app.presenter, "get_diff", return_value=BINARY_DIFF_MARKER
+        ):
+            app._on_file_selected()
+        rendered = [strip.text for strip in diff_viewer.lines if strip.text]
+        assert "Binary file, no diff available" in rendered[0]
+
+        with unittest.mock.patch.object(app.presenter, "get_diff", return_value=""):
+            app._on_file_selected()
+        rendered = [strip.text for strip in diff_viewer.lines if strip.text]
+        assert "No diff available" in rendered[0]
+        assert "Binary" not in rendered[0]
 
 
 @pytest.mark.asyncio
