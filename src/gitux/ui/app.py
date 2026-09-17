@@ -20,6 +20,7 @@ from gitux.domain import (
     PushResult,
     RemoteStatus,
     RepoInfo,
+    derive_steps,
     derive_wip_state,
 )
 from gitux.git.status import BINARY_DIFF_MARKER
@@ -275,10 +276,17 @@ class GituxApp(App[None]):
         )
 
         stats_bar = self.query_one("#stats-bar", RepoStatsBar)
+        steps = derive_steps(
+            file_counts,
+            remote_status,
+            has_commits=head_summary is not None,
+            operation=operation,
+        )
         stats_bar.update_stats(
             repo_name=repo_info.name if repo_info else "",
             branch=branch,
             head_summary=head_summary,
+            steps=steps,
         )
 
         changed_files = self.query_one("#changed-files", ChangedFilesPanel)
@@ -295,7 +303,11 @@ class GituxApp(App[None]):
         self._on_file_selected()
 
         footer = self.query_one(GituxFooter)
-        sync_ok = remote_status is not None and remote_status.behind == 0
+        sync_ok = (
+            remote_status is not None
+            and remote_status.ahead == 0
+            and remote_status.behind == 0
+        )
         footer.update_sync(ok=sync_ok)
 
     def _on_file_selected(self) -> None:

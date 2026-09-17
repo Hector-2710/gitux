@@ -27,7 +27,7 @@ _SEGMENT_PRIORITY: tuple[str, ...] = ("branch", "repo", "date", "head")
 
 _PREFIX_CELLS: int = 0  # no leading icon anymore
 _SEPARATOR_CELLS: int = 3  # " │ "
-_STEPS_CELLS: int = 10  # "●  ●  ●  ●" (4 dots + 3 double-space gaps)
+_STEPS_CELLS: int = 7  # "●  ●  ●" (3 dots + 2 double-space gaps)
 
 
 def _format_relative_time(epoch: int, *, now: float | None = None) -> str:
@@ -85,8 +85,8 @@ class RepoStatsBar(Vertical):
     ) -> None:
         """Render the stats bar with the given repo state (safe defaults included).
 
-        ``steps`` optionally overrides the derived step mask (test hook; the App
-        never passes it).
+        ``steps`` is the commit-step indicator count (0-3) derived by the App
+        from git state via :func:`gitux.domain.derive_steps`.
         """
         self._repo_name = repo_name
         self._branch = branch
@@ -203,15 +203,16 @@ class RepoStatsBar(Vertical):
         """Render the commit-step indicator dots (pinned to the right edge).
 
         Dots are spaced wider and rendered bold to read larger against the
-        two-line status bar.
+        two-line status bar. Three dots track the pipeline: staged → commit →
+        push; the indicator resets to 0 when the repo is fully synced.
         """
         text = Text(no_wrap=True)
-        for i in range(4):
+        for i in range(3):
             lit = i < self._steps
             text.append(
                 "\u25cf" if lit else "\u25cb",
                 style=("bold #34d399" if lit else "#908fa0"),
             )
-            if i < 3:
+            if i < 2:
                 text.append("  ", style="")
         return text

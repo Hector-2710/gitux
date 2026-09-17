@@ -3,7 +3,13 @@ import unittest.mock
 import pytest
 from textual.css.query import NoMatches
 
-from gitux.domain import FileStatus, HeadSummary, OperationState, RepoInfo
+from gitux.domain import (
+    FileStatus,
+    HeadSummary,
+    OperationState,
+    RemoteStatus,
+    RepoInfo,
+)
 from gitux.git.status import BINARY_DIFF_MARKER
 from gitux.ui.app import GituxApp, _BLOCK_MAP, _BLOCK_ORDER
 from gitux.ui.widgets import RepoStatsBar
@@ -351,3 +357,184 @@ async def test_refresh_all_wires_head_hash():
         stats = app.query_one("#stats-bar")
         left = stats.query_one("#stats-left")
         assert "feat: x" in left.content.plain
+
+
+@pytest.mark.asyncio
+async def test_refresh_all_wires_steps_staged():
+    """Staged files light the first step dot."""
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        with unittest.mock.patch(
+            "gitux.presenter.commit_presenter.get_status",
+            return_value=[FileStatus("M", " ", "a.py", None)],
+        ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_head_summary",
+                return_value=HeadSummary("66f7291", "feat: x", 1785784746),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_operation_state",
+                return_value=OperationState(False, False),
+            ):
+            app._refresh_all()
+        stats = app.query_one("#stats-bar")
+        assert stats._steps == 1
+        steps_plain = stats.query_one("#stats-steps").content.plain
+        assert steps_plain.count("\u25cf") == 1
+        assert steps_plain.count("\u25cb") == 2
+
+
+@pytest.mark.asyncio
+async def test_refresh_all_wires_steps_fully_synced():
+    """Clean tree + synced remote resets the indicator to 0."""
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        with unittest.mock.patch(
+            "gitux.presenter.commit_presenter.get_status",
+            return_value=[],
+        ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_head_summary",
+                return_value=HeadSummary("66f7291", "feat: x", 1785784746),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_operation_state",
+                return_value=OperationState(False, False),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_remote_status",
+                return_value=RemoteStatus("origin", "main", 0, 0),
+            ):
+            app._refresh_all()
+        stats = app.query_one("#stats-bar")
+        assert stats._steps == 0
+        steps_plain = stats.query_one("#stats-steps").content.plain
+        assert steps_plain.count("\u25cf") == 0
+        assert steps_plain.count("\u25cb") == 3
+
+
+@pytest.mark.asyncio
+async def test_refresh_all_wires_steps_ahead_of_remote():
+    """Committed but not pushed keeps the indicator at step 2."""
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        with unittest.mock.patch(
+            "gitux.presenter.commit_presenter.get_status",
+            return_value=[],
+        ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_head_summary",
+                return_value=HeadSummary("66f7291", "feat: x", 1785784746),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_operation_state",
+                return_value=OperationState(False, False),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_remote_status",
+                return_value=RemoteStatus("origin", "main", 2, 0),
+            ):
+            app._refresh_all()
+        stats = app.query_one("#stats-bar")
+        assert stats._steps == 2
+        steps_plain = stats.query_one("#stats-steps").content.plain
+        assert steps_plain.count("\u25cf") == 2
+        assert steps_plain.count("\u25cb") == 1
+
+
+@pytest.mark.asyncio
+async def test_footer_sync_consistent_with_steps_ahead():
+    """Unpushed commits: dots show pending work AND footer shows ✗ (not synced)."""
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        with unittest.mock.patch(
+            "gitux.presenter.commit_presenter.get_status",
+            return_value=[],
+        ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_head_summary",
+                return_value=HeadSummary("66f7291", "feat: x", 1785784746),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_operation_state",
+                return_value=OperationState(False, False),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_remote_status",
+                return_value=RemoteStatus("origin", "main", 2, 0),
+            ):
+            app._refresh_all()
+        footer = app.query_one("GituxFooter")
+        assert "\u2717" in footer.content.plain  # ✗ not synced
+        assert "\u2713" not in footer.content.plain
+
+
+@pytest.mark.asyncio
+async def test_footer_sync_consistent_with_steps_synced():
+    """Fully synced: dots reset to 0 AND footer shows ✓."""
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        with unittest.mock.patch(
+            "gitux.presenter.commit_presenter.get_status",
+            return_value=[],
+        ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_head_summary",
+                return_value=HeadSummary("66f7291", "feat: x", 1785784746),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_operation_state",
+                return_value=OperationState(False, False),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_remote_status",
+                return_value=RemoteStatus("origin", "main", 0, 0),
+            ):
+            app._refresh_all()
+        footer = app.query_one("GituxFooter")
+        assert "\u2713" in footer.content.plain  # ✓ synced
+        assert "\u2717" not in footer.content.plain
+
+
+@pytest.mark.asyncio
+async def test_footer_sync_consistent_with_steps_behind():
+    """Behind remote: dots show step 3 AND footer shows ✗."""
+    app = GituxApp()
+    async with app.run_test() as pilot:
+        with unittest.mock.patch(
+            "gitux.presenter.commit_presenter.get_status",
+            return_value=[],
+        ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_head_summary",
+                return_value=HeadSummary("66f7291", "feat: x", 1785784746),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_operation_state",
+                return_value=OperationState(False, False),
+            ), \
+            unittest.mock.patch.object(
+                app.repo,
+                "get_remote_status",
+                return_value=RemoteStatus("origin", "main", 0, 2),
+            ):
+            app._refresh_all()
+        footer = app.query_one("GituxFooter")
+        assert "\u2717" in footer.content.plain  # ✗ not synced
+        assert "\u2713" not in footer.content.plain

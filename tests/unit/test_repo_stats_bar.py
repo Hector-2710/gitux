@@ -29,18 +29,18 @@ class TestRenderText:
     @patch("gitux.ui.widgets.repo_stats_bar.time.time", return_value=T0)
     def test_full_render_anchor(self, mock_time) -> None:
         bar = RepoStatsBar()
-        set_fields(bar, steps=4, **FULL_FIELDS)
+        set_fields(bar, steps=3, **FULL_FIELDS)
         assert bar._render_text().plain == (
             "repo \u2502 "
             + "x" * 39
             + "\u2026 \u2502 2 days ago \u2502 main"
         )
-        assert bar._render_steps().plain == "\u25cf  \u25cf  \u25cf  \u25cf"
+        assert bar._render_steps().plain == "\u25cf  \u25cf  \u25cf"
 
     def test_bare_defaults(self) -> None:
         bar = RepoStatsBar()
         assert bar._render_text().plain == "(no commits)"
-        assert bar._render_steps().plain == "\u25cb  \u25cb  \u25cb  \u25cb"
+        assert bar._render_steps().plain == "\u25cb  \u25cb  \u25cb"
 
     def test_no_leading_icon(self) -> None:
         bar = RepoStatsBar()
@@ -103,39 +103,39 @@ class TestWidthDrop:
             yield bar
 
     def test_width_112_full_render(self, bar) -> None:
-        set_fields(bar, steps=4)
+        set_fields(bar, steps=3)
         assert bar._render_text(width=112).plain == (
             "repo \u2502 "
             + "x" * 39
             + "\u2026 \u2502 2 days ago \u2502 main"
         )
         assert bar._render_text().plain == bar._render_text(width=112).plain
-        assert bar._render_steps().plain == "\u25cf  \u25cf  \u25cf  \u25cf"
+        assert bar._render_steps().plain == "\u25cf  \u25cf  \u25cf"
 
-    def test_width_75_drops_branch(self, bar) -> None:
-        plain = bar._render_text(width=75).plain
+    def test_width_72_drops_branch(self, bar) -> None:
+        plain = bar._render_text(width=72).plain
         assert "main" not in plain
         assert "repo" in plain
         assert " \u25cb" in bar._render_steps().plain
 
-    def test_width_68_drops_repo(self, bar) -> None:
-        plain = bar._render_text(width=68).plain
+    def test_width_65_drops_repo(self, bar) -> None:
+        plain = bar._render_text(width=65).plain
         assert "repo" not in plain
         assert "2 days ago" in plain
 
-    def test_width_61_drops_date(self, bar) -> None:
-        plain = bar._render_text(width=61).plain
+    def test_width_58_drops_date(self, bar) -> None:
+        plain = bar._render_text(width=58).plain
         assert "2 days ago" not in plain
         assert ("x" * 39 + "\u2026") in plain
 
-    def test_width_48_elides_head_subject(self, bar) -> None:
-        plain = bar._render_text(width=48).plain
+    def test_width_45_elides_head_subject(self, bar) -> None:
+        plain = bar._render_text(width=45).plain
         assert ("x" * 40) not in plain  # subject truncated, not full 40 chars
         assert "x" in plain
         assert " \u25cb" in bar._render_steps().plain
 
-    def test_width_21_dots_present(self, bar) -> None:
-        plain = bar._render_text(width=21).plain
+    def test_width_18_dots_present(self, bar) -> None:
+        plain = bar._render_text(width=18).plain
         steps_plain = bar._render_steps().plain
         assert " \u25cf" in steps_plain or " \u25cb" in steps_plain
         assert "STATS" not in plain
@@ -157,24 +157,24 @@ class TestSteps:
         bar.update_stats(steps=2)
         assert bar._steps == 2
 
-    @pytest.mark.parametrize("steps", [0, 1, 2, 3, 4])
+    @pytest.mark.parametrize("steps", [0, 1, 2, 3])
     def test_dot_counts(self, steps) -> None:
         bar = RepoStatsBar()
         set_fields(bar, steps=steps, **FULL_FIELDS)
         steps_plain = bar._render_steps().plain
         assert steps_plain.count("\u25cf") == steps
-        assert steps_plain.count("\u25cb") == 4 - steps
+        assert steps_plain.count("\u25cb") == 3 - steps
 
     def test_steps_override_renders(self) -> None:
         bar = RepoStatsBar()
         bar.update_stats(steps=2)
         steps_plain = bar._render_steps().plain
         assert steps_plain.count("\u25cf") == 2
-        assert steps_plain.count("\u25cb") == 2
+        assert steps_plain.count("\u25cb") == 1
         bar2 = RepoStatsBar()
-        set_fields(bar2, steps=4, **FULL_FIELDS)
+        set_fields(bar2, steps=3, **FULL_FIELDS)
         steps_plain2 = bar2._render_steps().plain
-        assert steps_plain2.count("\u25cf") == 4
+        assert steps_plain2.count("\u25cf") == 3
         assert steps_plain2.count("\u25cb") == 0
 
 

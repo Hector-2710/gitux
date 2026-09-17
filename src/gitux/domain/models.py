@@ -184,3 +184,39 @@ class RemoteStatus:
     def diverged(self) -> bool:
         """True if both ahead > 0 and behind > 0."""
         return self.ahead > 0 and self.behind > 0
+
+
+def derive_steps(
+    file_counts: FileCounts,
+    remote_status: RemoteStatus | None,
+    has_commits: bool,
+    operation: OperationState | None,
+) -> int:
+    """Derive the commit-step indicator count (0-3).
+
+    The three dots track the commit pipeline and reset once the repo is
+    fully synced:
+      0. idle   — fully synced (or no commits / operation in progress)
+      1. add    — files are staged
+      2. commit — nothing staged remains and the repo has commits
+      3. push   — no unpushed commits but behind the remote (needs pull)
+
+    A merge/rebase in progress short-circuits to 0. Without a configured
+    upstream (``remote_status.remote == ""``) the pipeline stops at commit.
+    """
+    if operation is not None and operation.in_progress:
+        return 0
+
+    if file_counts.staged > 0:
+        return 1
+    if not has_commits:
+        return 0
+
+    if remote_status is not None and remote_status.remote:
+        if remote_status.ahead == 0 and remote_status.behind == 0:
+            return 0  # fully synced → reset
+        if remote_status.ahead == 0:
+            return 3  # pushed but behind → needs pull
+        return 2  # ahead → needs push
+
+    return 2  # committed, no upstream
