@@ -12,6 +12,7 @@ wheels/
 # Docs
 docs/
 DESIGN.md
+ux/
 
 # Opencode
 .opencode/
