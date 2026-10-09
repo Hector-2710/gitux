@@ -4,16 +4,17 @@ from rich.text import Text
 from textual.widgets import Static
 
 from gitux.domain import WipState
+from gitux.ui import tokens
 
 _MAX_OWNER_CHARS: int = 24
 _MAX_REPO_CHARS: int = 32
 _MAX_BRANCH_CHARS: int = 24
 
 _WIP_DOT_STYLE: dict[WipState, str] = {
-    WipState.CLEAN: "#10b981",    # green
-    WipState.DIRTY: "#ffb783",    # yellow
-    WipState.CONFLICT: "#ffb4ab",  # red
-    WipState.UNKNOWN: "#908fa0",   # gray
+    WipState.CLEAN: tokens.GREEN,
+    WipState.DIRTY: tokens.AMBER,
+    WipState.CONFLICT: tokens.RED,
+    WipState.UNKNOWN: tokens.TEXT_DIM,
 }
 
 
@@ -59,23 +60,21 @@ class TopAppBar(Static):
     def _render_text(self) -> Text:
         """Render the header line as rich text."""
         text = Text()
-        text.append(" \u25c9", style="bold #9c60ec")
-        text.append(" GITUX // ", style="#e4e1ed")
+        text.append(" \u25c9", style=f"bold {tokens.PURPLE_EMPHASIS}")
+        text.append(" GITUX // ", style=tokens.TEXT)
         repo = self._repo_name[:_MAX_REPO_CHARS]
         if self._owner:
             text.append(
-                f"{self._owner[:_MAX_OWNER_CHARS]}/{repo}", style="#e4e1ed"
+                f"{self._owner[:_MAX_OWNER_CHARS]}/{repo}", style=tokens.TEXT
             )
         else:
-            text.append(repo, style="#e4e1ed")
+            text.append(repo, style=tokens.TEXT)
         if self._branch:
             branch = self._branch[:_MAX_BRANCH_CHARS]
             star = "*" if self._branch == self._default_branch else ""
             if self._is_detached:
-                text.append(f" ({branch})", style="#ffb4ab on #93000a")
+                text.append(f" ({branch})", style=f"{tokens.RED} on {tokens.BG_ERROR}")
             else:
-                text.append(f" [{branch}{star}]", style="#06B6D4 on #201e2a")
+                text.append(f" \u2387 [{branch}{star}]", style=f"{tokens.CYAN} on {tokens.BG_INPUT}")
         text.append(" \u25cf", style=_WIP_DOT_STYLE[self._wip_state])
-        text.append("  ", style="")
-        text.append("\u2699", style="#c7c4d7")
         return text

@@ -6,17 +6,19 @@ from typing import Self, override
 from rich.text import Text
 from textual.widgets import RichLog
 
+from gitux.ui import tokens
+
 _MAX_DIFF_LINES: int = 2000
 
 _COLORS: dict[str, str] = {
-    "addition": "#10b981",
-    "addition_bg": "#123a2a",
-    "deletion": "#ffb4ab",
-    "deletion_bg": "#3a1d1d",
-    "header": "#9c60ec",
-    "default": "#e4e1ed",
-    "dim": "#c7c4d7",
-    "line_num": "#4a3a6b",
+    "addition": tokens.GREEN,
+    "addition_bg": tokens.BG_ADDITION,
+    "deletion": tokens.RED,
+    "deletion_bg": tokens.BG_DELETION,
+    "header": tokens.PURPLE_EMPHASIS,
+    "default": tokens.TEXT,
+    "dim": tokens.TEXT_SECONDARY,
+    "line_num": tokens.LINE_NUM,
 }
 
 _DIFF_METADATA_PREFIXES: tuple[str, ...] = (

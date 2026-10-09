@@ -7,6 +7,7 @@ from textual.binding import Binding
 from textual.containers import Vertical
 from textual.screen import ModalScreen
 
+from gitux.git import GitError
 from gitux.presenter.repo_presenter import RepoPresenter
 from gitux.ui.widgets.commit_log import CommitLogWidget, extract_commit_hash
 
@@ -74,7 +75,13 @@ class CommitLogScreen(ModalScreen[None]):
         commit_hash = extract_commit_hash(line)
         if commit_hash is None:
             return
-        details = self.presenter.get_commit_details(commit_hash)
+        try:
+            details = self.presenter.get_commit_details(commit_hash)
+        except GitError as exc:
+            self.app.show_error(
+                f"could not load commit details: {exc} \u2192 press l to reload the log"
+            )
+            return
         if not details:
             return
         log.show_details(commit_hash, details)

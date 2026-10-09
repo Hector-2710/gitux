@@ -6,16 +6,17 @@ from rich.text import Text
 from textual.widgets import RichLog
 
 from gitux.domain import FileStatus
+from gitux.ui import tokens
 
 
 _STATUS_COLORS: dict[str, str] = {
-    "M": "#ffb783",
-    "A": "#10b981",
-    "D": "#ffb4ab",
-    "R": "#06B6D4",
-    "C": "#06B6D4",
-    "u": "#22c55e",
-    "!": "#c7c4d7",
+    "M": tokens.AMBER,
+    "A": tokens.GREEN,
+    "D": tokens.RED,
+    "R": tokens.CYAN,
+    "C": tokens.CYAN,
+    "u": tokens.GREEN,
+    "!": tokens.TEXT_SECONDARY,
 }
 
 _MAX_PATH_CHARS: int = 40
@@ -123,21 +124,21 @@ class ChangedFilesPanel(RichLog):
         staged = [f for f in self._files if f.is_staged]
         unstaged = [f for f in self._files if f.is_unstaged]
 
-        text.append(" \u25a0 STAGED", style="bold #06B6D4")
+        text.append(" \u25cf STAGED", style=f"bold {tokens.CYAN}")
         text.append("\n")
 
         if staged:
             text.append(self._build_file_entries(staged, 0))
         else:
-            text.append("   No changed files\n", style="italic #c7c4d7")
+            text.append("   No changed files\n", style=f"italic {tokens.TEXT_SECONDARY}")
 
-        text.append(" \u25a0 UNSTAGED", style="bold #ffb783")
+        text.append(" \u25cf UNSTAGED", style=f"bold {tokens.AMBER}")
         text.append("\n")
 
         if unstaged:
             text.append(self._build_file_entries(unstaged, len(staged)))
         else:
-            text.append("   No changed files\n", style="italic #c7c4d7")
+            text.append("   No changed files\n", style=f"italic {tokens.TEXT_SECONDARY}")
 
         return text
 
@@ -148,15 +149,15 @@ class ChangedFilesPanel(RichLog):
             linear_idx = start_index + i
             is_cursor = linear_idx == self._cursor_index
             status = f.display_status
-            color = _STATUS_COLORS.get(status, "#e4e1ed")
+            color = _STATUS_COLORS.get(status, tokens.TEXT)
 
             if is_cursor:
-                text.append(" \u276f", style="bold #9c60ec")
+                text.append(" \u276f", style=f"bold {tokens.PURPLE_EMPHASIS}")
             else:
                 text.append("  ")
 
             text.append(f" {status}", style=f"bold {color}")
-            text.append(f" {self._truncate_path(f.display_path)}", style="#e4e1ed")
+            text.append(f" {self._truncate_path(f.display_path)}", style=tokens.TEXT)
             text.append("\n")
 
         return text

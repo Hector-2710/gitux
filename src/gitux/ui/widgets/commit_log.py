@@ -5,6 +5,8 @@ from typing import Self, override
 from rich.text import Text
 from textual.widgets import RichLog
 
+from gitux.ui import tokens
+
 _GRAPH_CHARS: str = "*|/\\ -_`"
 
 
@@ -40,7 +42,7 @@ class CommitLogWidget(RichLog):
         self._cursor_index: int = 0
         self._detail_hash: str | None = None
         self._detail_text: str | None = None
-        _ = self.write(Text("  (loading...)", style="italic #c7c4d7"))
+        _ = self.write(Text("  (loading...)", style=f"italic {tokens.TEXT_SECONDARY}"))
 
     @property
     def is_detail_mode(self) -> bool:
@@ -89,7 +91,7 @@ class CommitLogWidget(RichLog):
         self._log_lines = []
         self._cursor_index = 0
         _ = super().clear()
-        _ = self.write(Text("  No commits yet", style="italic #c7c4d7"))
+        _ = self.write(Text("  No commits yet", style=f"italic {tokens.TEXT_SECONDARY}"))
         return self
 
     def action_cursor_down(self) -> None:
@@ -137,7 +139,7 @@ class CommitLogWidget(RichLog):
         result = Text()
 
         if cursor:
-            result.append(" \u276f", style="bold #9c60ec")
+            result.append(" \u276f", style=f"bold {tokens.PURPLE_EMPHASIS}")
         else:
             result.append("  ")
 
@@ -150,16 +152,16 @@ class CommitLogWidget(RichLog):
                 content_part = line[i:]
                 break
         else:
-            result.append(line, style="#908fa0")
+            result.append(line, style=tokens.TEXT_DIM)
             return result
 
         for ch in graph_part:
             if ch == "*":
-                result.append("*", style="bold #9c60ec")
+                result.append("*", style=f"bold {tokens.PURPLE_EMPHASIS}")
             elif ch in "|/\\":
-                result.append(ch, style="#908fa0")
+                result.append(ch, style=tokens.TEXT_DIM)
             else:
-                result.append(ch, style="#c7c4d7")
+                result.append(ch, style=tokens.TEXT_SECONDARY)
 
         content = content_part.strip()
         if not content:
@@ -186,9 +188,9 @@ class CommitLogWidget(RichLog):
                                 break
                         i += 1
                     refs_content = rest[paren_start:i]
-                    rest_text.append(refs_content, style="bold #ffb783")
+                    rest_text.append(refs_content, style=f"bold {tokens.AMBER}")
                 else:
-                    rest_text.append(rest[i], style="#e4e1ed")
+                    rest_text.append(rest[i], style=tokens.TEXT)
                     i += 1
 
             result.append(" ")
