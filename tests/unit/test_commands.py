@@ -7,6 +7,7 @@ import pytest
 
 from gitux.domain import HeadSummary, OperationState
 from gitux.git import GitError
+from gitux.git.remote import pull
 from gitux.git.commands import (
     _COMMIT_DETAILS_FORMAT,
     _extract_owner,
@@ -535,3 +536,54 @@ class TestGetCommitDetails:
         mock_run.return_value = MagicMock(returncode=128, stdout="", stderr="fatal")
         with pytest.raises(GitError):
             get_commit_details("c4474af")
+
+
+class TestPull:
+    """Tests for gitux.git.remote.pull (scope S4 / structure T3)."""
+
+    def test_pull_success(self) -> None:
+        result_mock = subprocess.CompletedProcess(
+            args=["git", "pull", "--ff-only"],
+            returncode=0,
+            stdout="Fast-forward", stderr="",
+        )
+        with patch("gitux.git.remote.subprocess.run", return_value=result_mock):
+            result = pull()
+        assert result.success is True
+        assert result.error is None
+        assert result.diverged is False
+
+    def test_pull_diverged_sets_flag(self) -> None:
+        result_mock = subprocess.CompletedProcess(
+            args=["git", "pull", "--ff-only"],
+            returncode=1,
+            stdout="",
+            stderr="fatal: Not possible to fast-forward, aborting.",
+        )
+        with patch("gitux.git.remote.subprocess.run", return_value=result_mock):
+            result = pull()
+        assert result.success is False
+        assert result.diverged is True
+        assert "fast-forward" in (result.error or "")
+
+    def test_pull_generic_failure(self) -> None:
+        result_mock = subprocess.CompletedProcess(
+            args=["git", "pull", "--ff-only"],
+            returncode=1,
+            stdout="",
+            stderr="fatal: could not read from remote",
+        )
+        with patch("gitux.git.remote.subprocess.run", return_value=result_mock):
+            result = pull()
+        assert result.success is False
+        assert result.diverged is False
+        assert "could not read from remote" in (result.error or "")
+
+    def test_pull_timeout(self) -> None:
+        with patch(
+            "gitux.git.remote.subprocess.run",
+            side_effect=subprocess.TimeoutExpired(cmd="git", timeout=60),
+        ):
+            result = pull()
+        assert result.success is False
+        assert "timed out" in (result.error or "")

@@ -260,7 +260,7 @@ async def test_context_line_has_no_background():
         await pilot.pause()
         style = _line_style(viewer, 1)  # first context line
         assert style.bgcolor is None
-        assert style.color.triplet.hex == "#e4e1ed"
+        assert style.color.triplet.hex == "#e6e0f1"  # V1: the one text-white
 
 
 @pytest.mark.asyncio
