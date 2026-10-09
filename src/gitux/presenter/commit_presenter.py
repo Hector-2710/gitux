@@ -1,6 +1,6 @@
-"""Presenter for working-tree operations: status, staging, commit, push."""
+"""Presenter for working-tree operations: status, staging, commit, push, pull."""
 
-from gitux.domain import CommitResult, FileStatus, PushResult
+from gitux.domain import CommitResult, FileStatus, PullResult, PushResult
 from gitux.git import (
     GitError,
     commit as git_commit,
@@ -12,7 +12,9 @@ from gitux.git import (
     get_status,
     get_untracked_file_diff,
     is_detached_head,
+    pull as git_pull,
     push as git_push,
+    staged_numstat as git_staged_numstat,
     stage as git_stage,
     unstage as git_unstage,
 )
@@ -87,6 +89,13 @@ class CommitPresenter:
 
         return git_push(remote=status.remote, branch=status.branch)
 
+    def pull(self) -> PullResult:
+        """Pull from the remote (scope S4). ``diverged=True`` when a merge is needed."""
+        status = get_remote_status()
+        if not status.remote:
+            return PullResult(success=False, error="No remote configured")
+        return git_pull(remote=status.remote, branch=status.branch)
+
     def can_commit(self) -> bool:
         """Whether commit action is allowed."""
         state = get_operation_state()               
@@ -105,3 +114,10 @@ class CommitPresenter:
         lines = message.strip().splitlines()
         cleaned = [line for line in lines if not line.lstrip().startswith("#")]
         return "\n".join(cleaned).strip()
+
+    def staged_numstat(self) -> tuple[int, int]:
+        """Return (additions, deletions) of the staged diff (skeleton K6).
+
+        Propagates GitError.
+        """
+        return git_staged_numstat()

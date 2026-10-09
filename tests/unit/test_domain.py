@@ -9,6 +9,7 @@ from gitux.domain import (
     RemoteStatus,
     RepoInfo,
     WipState,
+    derive_steps,
     derive_wip_state,
 )
 
@@ -203,3 +204,122 @@ class TestRepoInfoOwner:
     def test_owner_keyword(self) -> None:
         ri = RepoInfo(name="gitux", path="/p", owner="Hector-2710")
         assert ri.owner == "Hector-2710"
+
+
+class TestDeriveSteps:
+    def _counts(self, staged: int = 0) -> FileCounts:
+        return FileCounts(staged, 0, 0, 0)
+
+    def test_operation_in_progress_short_circuits(self) -> None:
+        assert (
+            derive_steps(
+                self._counts(staged=1),
+                RemoteStatus("origin", "main", 0, 0),
+                True,
+                OperationState(True, False),
+            )
+            == 0
+        )
+
+    def test_staged_files_step_1(self) -> None:
+        assert (
+            derive_steps(
+                self._counts(staged=1),
+                None,
+                True,
+                OperationState(False, False),
+            )
+            == 1
+        )
+
+    def test_staged_files_win_over_remote_state(self) -> None:
+        # Staged files mean you're at the add step, even if remote is synced.
+        assert (
+            derive_steps(
+                self._counts(staged=1),
+                RemoteStatus("origin", "main", 0, 0),
+                True,
+                OperationState(False, False),
+            )
+            == 1
+        )
+
+    def test_no_commits_no_staged_returns_0(self) -> None:
+        assert (
+            derive_steps(
+                self._counts(),
+                None,
+                False,
+                OperationState(False, False),
+            )
+            == 0
+        )
+
+    def test_committed_step_2(self) -> None:
+        assert (
+            derive_steps(
+                self._counts(),
+                None,
+                True,
+                OperationState(False, False),
+            )
+            == 2
+        )
+
+    def test_no_upstream_stays_step_2(self) -> None:
+        # remote="" means no upstream configured; ahead/behind are meaningless.
+        assert (
+            derive_steps(
+                self._counts(),
+                RemoteStatus("", "main", 0, 0),
+                True,
+                OperationState(False, False),
+            )
+            == 2
+        )
+
+    def test_ahead_of_remote_stays_step_2(self) -> None:
+        assert (
+            derive_steps(
+                self._counts(),
+                RemoteStatus("origin", "main", 2, 0),
+                True,
+                OperationState(False, False),
+            )
+            == 2
+        )
+
+    def test_fully_synced_resets_to_0(self) -> None:
+        # Clean tree + synced remote → nothing pending, indicator resets.
+        assert (
+            derive_steps(
+                self._counts(),
+                RemoteStatus("origin", "main", 0, 0),
+                True,
+                OperationState(False, False),
+            )
+            == 0
+        )
+
+    def test_behind_remote_stays_step_3(self) -> None:
+        # Pushed but behind → needs pull, indicator shows step 3.
+        assert (
+            derive_steps(
+                self._counts(),
+                RemoteStatus("origin", "main", 0, 3),
+                True,
+                OperationState(False, False),
+            )
+            == 3
+        )
+
+    def test_diverged_stays_step_2(self) -> None:
+        assert (
+            derive_steps(
+                self._counts(),
+                RemoteStatus("origin", "main", 2, 3),
+                True,
+                OperationState(False, False),
+            )
+            == 2
+        )

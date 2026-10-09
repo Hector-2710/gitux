@@ -6,10 +6,11 @@ from gitux.domain.models import FileCounts
 from gitux.domain.models import FileStatus
 from gitux.domain.models import HeadSummary
 from gitux.domain.models import OperationState
-from gitux.domain.models import PushResult
+from gitux.domain.models import PullResult, PushResult
 from gitux.domain.models import RemoteStatus
 from gitux.domain.models import RepoInfo
 from gitux.domain.models import WipState
+from gitux.domain.models import derive_steps
 from gitux.domain.models import derive_wip_state
 
 __all__ = [
@@ -19,9 +20,11 @@ __all__ = [
     "FileStatus",
     "HeadSummary",
     "OperationState",
+    "PullResult",
     "PushResult",
     "RemoteStatus",
     "RepoInfo",
     "WipState",
+    "derive_steps",
     "derive_wip_state",
 ]

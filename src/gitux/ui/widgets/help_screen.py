@@ -1,4 +1,9 @@
-"""Help screen modal — shows all keyboard shortcuts."""
+"""Help screen modal — the only guidance surface (skeleton K5, structure T5).
+
+Lists the REAL key set, grouped by screen (board / commit block / branches
+/ log), plus the step-dots legend. No phantom actions (V7): every key here
+exists in the app. Colors use the V1 tokens.
+"""
 
 from rich.text import Text
 from textual.app import ComposeResult
@@ -7,9 +12,16 @@ from textual.containers import Vertical
 from textual.screen import ModalScreen
 from textual.widgets import Static
 
+from gitux.ui import tokens
+
+_SECTION_STYLE = f"bold {tokens.PURPLE_EMPHASIS}"
+_KEY_STYLE = f"bold {tokens.AMBER}"
+_DESC_STYLE = tokens.TEXT_SECONDARY
+_LEGEND_STYLE = tokens.TEXT_DIM
+
 
 class HelpScreen(ModalScreen[None]):
-    """Modal screen displaying all keyboard shortcuts."""
+    """Modal screen displaying the real keyboard shortcuts (K5)."""
 
     BINDINGS = [
         Binding("escape", "dismiss", "Close"),
@@ -31,44 +43,55 @@ class HelpScreen(ModalScreen[None]):
 
         def _section(title: str) -> None:
             """Append a section header line."""
-            t.append(f"\n  {title}\n", style="bold #6366f1")
+            t.append(f"\n  {title}\n", style=_SECTION_STYLE)
 
         def _shortcut(key: str, desc: str) -> None:
             """Append a shortcut row line."""
-            t.append(f"    {key:<14}", style="bold #f59e0b")
-            t.append(f"{desc}\n", style="#e2e8f0")
+            t.append(f"    {key:<14}", style=_KEY_STYLE)
+            t.append(f"{desc}\n", style=_DESC_STYLE)
 
-        # ── Navigation ──
-        _section("Navigation")
-        _shortcut("Tab", "Next section (Files/Diff)")
-        _shortcut("\u2191 / \u2193", "Scroll active section content")
-        _shortcut("Enter", "Activate selected section")
-        _shortcut("j / k", "Scroll down / up")
-
-        # ── File Actions ──
-        _section("Files")
-        _shortcut("s / Enter", "Stage / Unstage file")
-        _shortcut("a", "Stage all files")
-        _shortcut("A", "Unstage all files")
-
-        # ── Commit & Push ──
-        _section("Commit & Push")
-        _shortcut("c", "Focus commit message")
-        _shortcut("Ctrl+Enter", "Create commit")
+        # ── Board ──
+        _section("Board")
+        _shortcut("Tab", "Next block (files / diff / commit)")
+        _shortcut("\u2191/\u2193 or j/k", "Move in the active block")
+        _shortcut("s / Enter", "Stage / unstage file")
+        _shortcut("a / A", "Stage all / unstage all")
+        _shortcut("p", "Pull from remote")
         _shortcut("Ctrl+p", "Push to remote")
-
-        # ── General ──
-        _section("General")
-        _shortcut("r", "Refresh status")
-        _shortcut("b", "Branches panel")
+        _shortcut("b", "Branches screen")
         _shortcut("l", "Commit log")
         _shortcut("?", "Show this help")
         _shortcut("q", "Quit GITUX")
-        _shortcut("Escape", "Cancel / Go back")
 
-        # ── Upcoming (dimmed) ──
-        _section("Coming Soon")
-        t.append("    /              Search files\n", style="dim #64748b")
-        t.append("    S              Stash panel\n", style="dim #64748b")
+        # ── Commit block ──
+        _section("Commit block")
+        _shortcut("Ctrl+Enter", "Create commit")
+        _shortcut("Enter", "New line (message body)")
+        _shortcut("Esc", "Back to the files block")
+
+        # ── Branches screen ──
+        _section("Branches screen")
+        _shortcut("Enter", "Switch to branch")
+        _shortcut("m", "Merge into current branch")
+        _shortcut("d", "Delete branch (y confirms)")
+        _shortcut("n", "New branch (type name, Enter)")
+        _shortcut("Esc", "Cancel")
+
+        # ── Log screen ──
+        _section("Log screen")
+        _shortcut("\u2191/\u2193", "Navigate commits")
+        _shortcut("Enter", "Commit details")
+        _shortcut("Esc", "Close")
+
+        # ── Step-dots legend (K5) ──
+        _section("Steps")
+        t.append(
+            "    \u25cf  staged \u2192 commit \u2192 push \u2192 pull\n",
+            style=_LEGEND_STYLE,
+        )
+        t.append(
+            "       (no dots lit = fully synced)\n",
+            style=_LEGEND_STYLE,
+        )
 
         return t

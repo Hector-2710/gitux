@@ -1,35 +1,73 @@
-# GITUX
+<h1 align="center">gitux</h1>
 
-[![PyPI version](https://img.shields.io/pypi/v/gitux.svg)](https://pypi.org/project/gitux/)
-[![Python versions](https://img.shields.io/pypi/pyversions/gitux.svg)](https://pypi.org/project/gitux/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/Hector-2710/gitux/blob/main/LICENSE)
+<p align="center">
+  <img src="assets/gitux-2.png" alt="gitux logo" width="220"/>
+</p>
 
-A beautiful, minimalist TUI for Git.
+<p align="center">
+  <em>A beautiful, minimalist TUI for Git.</em>
+</p>
 
-GITUX is a terminal user interface for Git that prioritizes design and user experience. It wraps Git commands in a clean, visually appealing interface — so you can work with Git without leaving the terminal, and enjoy doing it.
+<p align="center">
+  <a href="https://pypi.org/project/gitux/"><img src="https://img.shields.io/pypi/v/gitux.svg" alt="PyPI version"/></a>
+  <a href="https://pypi.org/project/gitux/"><img src="https://img.shields.io/pypi/pyversions/gitux.svg" alt="Python versions"/></a>
+  <a href="https://github.com/Hector-2710/gitux/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"/></a>
+  <img src="https://img.shields.io/badge/status-beta-purple.svg" alt="Status: Beta"/>
+</p>
 
-## Why GITUX?
+<p align="center">
+  <b>Git in the terminal — A beautiful, minimalist TUI for Git..</b>
+</p>
 
-Most Git TUIs are functional but not beautiful. GITUX is built with the belief that developer tools should be both powerful and pleasant to look at.
+---
 
-- **Minimalist** — No clutter, no overwhelming menus. Just what you need.
-- **Beautiful** — Clean colors, thoughtful spacing, modern aesthetics.
-- **Fast** — Direct subprocess calls to Git, no heavy abstractions.
+gitux is a terminal user interface for Git that prioritizes **design** and
+**user experience**. It wraps Git commands in a clean, visually appealing
+interface — so you can work with Git without leaving the terminal, and enjoy
+doing it.
 
-## Features
+## ✨ Demo
 
-- View repository status with color-coded file states
-- Browse commit history with details
-- Stage and commit files with messages
-- View diffs between files
-- Manage branches (create, switch, delete)
-- Merge branches
-- Push to remote
-- Performance metrics (startup time, memory usage)
+Soon
 
-## Installation
+```
+$ gitux
+```
 
-**Recommended — with [pipx](https://pipx.pypa.io/) or [uv](https://docs.astral.sh/uv/) (isolated install):**
+## 🎯 Why gitux?
+
+Most Git TUIs are functional but not beautiful. gitux is built with the belief
+that developer tools should be both **powerful** and **pleasant to look at**.
+
+| Pillar | What it means |
+|--------|---------------|
+| 🪶 **Minimalist** | No clutter, no overwhelming menus. Just what you need. |
+| 🎨 **Beautiful** | Clean colors, thoughtful spacing, modern aesthetics. |
+| ⚡ **Fast** | Direct subprocess calls to Git, no heavy abstractions. |
+
+> **Honest comparison:** gitux is not trying to replace `lazygit` or `tig` as a
+> full-featured power tool. It is a focused, opinionated interface for the
+> everyday Git workflow — status, staging, commits, branches, and pushes —
+> designed to be a pleasure to use.
+
+## 🚀 Features
+
+| Feature | Description |
+|---------|-------------|
+| 📂 **Repository status** | Color-coded file states (staged / unstaged / modified / added / deleted) |
+| ⚡ **Live board** | Repository state updates on its own — no refresh key, no stale screens |
+| ✍️ **Stage & commit** | Stage files individually or all at once; multi-line commit messages in the always-ready commit panel |
+| 🔍 **Diff viewer** | Unified diffs with line numbers and syntax-aware colors |
+| 🌿 **Branch management** | Switch, create, and delete branches |
+| 🔀 **Merge** | Merge branches from the interface |
+| 🚀 **Push & pull** | Push and pull to/from the remote with porcelain output parsing |
+| 🕘 **Commit history** | Browse commits with a visual graph and branch refs |
+
+## 📦 Installation
+
+**Requirements:** Python 3.12+ and `git` installed on your system.
+
+### Recommended — isolated install
 
 ```bash
 # With pipx
@@ -39,26 +77,13 @@ pipx install gitux
 uv tool install gitux
 ```
 
-**Or with pip:**
+### With pip
 
 ```bash
 pip install gitux
 ```
 
-> **Requirements:** Python 3.12+ and `git` installed on your system.
-
-<details>
-<summary>Install from source (for development)</summary>
-
-```bash
-git clone https://github.com/Hector-2710/gitux.git
-cd gitux
-uv sync --all-extras
-uv run gitux
-```
-</details>
-
-## Usage
+## 🖥️ Usage
 
 Inside any Git repository, just run:
 
@@ -69,24 +94,23 @@ gitux
 gitux --version
 ```
 
-### Keybindings
+### ⌨️ Keybindings
 
 | Key | Action |
 |-----|--------|
-| `Tab` | Next section (Files / Diff) |
-| `↑` / `↓` or `j` / `k` | Scroll active section |
+| `Tab` | Next block (files / diff / commit) |
+| `↑` / `↓` or `j` / `k` | Move in the active block |
 | `s` / `Enter` | Stage / unstage file |
 | `a` / `A` | Stage all / unstage all files |
-| `c` | Focus commit message |
-| `Ctrl+Enter` | Create commit |
+| `Ctrl+Enter` | Create commit (from the commit block) |
 | `Ctrl+p` | Push to remote |
-| `r` | Refresh status |
-| `b` | Branches panel |
-| `l` | Commit log (overlay) |
+| `p` | Pull from remote |
+| `b` | Branches screen |
+| `l` | Commit log |
 | `?` | Show help |
-| `q` | Quit GITUX |
+| `q` | Quit Gitux |
 
-## Stack
+## 🧱 Stack
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
@@ -94,9 +118,9 @@ gitux --version
 | TUI | Textual | Terminal interface with CSS styling |
 | CLI | Typer | Command-line entry point |
 | Git | subprocess + git CLI | Git operations |
-| Metrics | psutil | Performance measurement |
+| Metrics | psutil | Internal benchmark harness (not user-facing) |
 
-## Development
+## 🛠️ Development
 
 ```bash
 # Install dev dependencies
@@ -112,7 +136,7 @@ uv run ruff check .
 uv run ruff format .
 ```
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 gitux/
@@ -132,6 +156,7 @@ gitux/
 │   ├── integration/
 │   └── e2e/
 ├── docs/
+│   ├── STYLE_GUIDE.md          # Brand & visual identity guide
 │   ├── context.md
 │   ├── container.md
 │   └── diagrams/
@@ -139,6 +164,15 @@ gitux/
 └── README.md
 ```
 
-## License
+## 🤝 Contributing
 
-MIT
+Contributions are welcome! Feel free to open an
+[issue](https://github.com/Hector-2710/gitux/issues) or a
+[pull request](https://github.com/Hector-2710/gitux/pulls).
+
+Before contributing, please read the
+[style guide](docs/STYLE_GUIDE.md) to keep the visual identity consistent.
+
+## 📄 License
+
+[MIT](LICENSE) © Hector-2710

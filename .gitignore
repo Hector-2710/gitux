@@ -12,6 +12,7 @@ wheels/
 # Docs
 docs/
 DESIGN.md
+ux/
 
 # Opencode
 .opencode/
@@ -20,3 +21,5 @@ AGENTS.md
 # Metrics
 .scannerwork
 sonar-project.properties
+coverage.xml
+.coverage

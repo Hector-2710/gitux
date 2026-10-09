@@ -11,6 +11,9 @@ from gitux.git.branch import (
     get_current_branch,
     get_default_branch,
     is_detached_head,
+    create_branch,
+    delete_branch,
+    merge_branch,
     switch_branch,
 )
 from gitux.git.commit import (
@@ -31,6 +34,7 @@ from gitux.git.remote import (
     _PUSH_TIMEOUT,
     get_remote_status,
     get_repo_info,
+    pull,
     push,
 )
 from gitux.git.repo import (
@@ -49,6 +53,7 @@ from gitux.git.status import (
     get_staged_diff,
     get_staged_file_diff,
     get_status,
+    staged_numstat,
     get_untracked_file_diff,
     stage,
     unstage,
@@ -79,13 +84,18 @@ __all__ = [
     "get_staged_diff",
     "get_staged_file_diff",
     "get_status",
+    "staged_numstat",
     "get_untracked_file_diff",
     "get_user",
     "is_detached_head",
     "is_merge_in_progress",
     "is_rebase_in_progress",
+    "pull",
     "push",
     "stage",
+    "create_branch",
+    "delete_branch",
+    "merge_branch",
     "switch_branch",
     "unstage",
 ]

@@ -20,14 +20,14 @@ class TestRenderText:
         bar._branch = "main"
         bar._default_branch = "main"
         bar._wip_state = WipState.CLEAN
-        assert bar._render_text().plain == " \u25c9 GITUX // Hector-2710/gitux [main*] \u25cf  \u2699"
+        assert bar._render_text().plain == " \u25c9 GITUX // Hector-2710/gitux \u2387 [main*] \u25cf"
 
     def test_no_owner(self) -> None:
         bar = TopAppBar()
         bar._repo_name = "gitux"
         bar._branch = "main"
         bar._wip_state = WipState.UNKNOWN
-        assert bar._render_text().plain == " \u25c9 GITUX // gitux [main] \u25cf  \u2699"
+        assert bar._render_text().plain == " \u25c9 GITUX // gitux \u2387 [main] \u25cf"
 
     def test_not_default_branch_no_star(self) -> None:
         bar = TopAppBar()
@@ -35,7 +35,7 @@ class TestRenderText:
         bar._owner = "Hector-2710"
         bar._branch = "feature/x"
         bar._default_branch = "main"
-        assert bar._render_text().plain == " \u25c9 GITUX // Hector-2710/gitux [feature/x] \u25cf  \u2699"
+        assert bar._render_text().plain == " \u25c9 GITUX // Hector-2710/gitux \u2387 [feature/x] \u25cf"
 
     def test_detached_empty_branch_no_badge(self) -> None:
         bar = TopAppBar()
@@ -43,14 +43,14 @@ class TestRenderText:
         bar._owner = "Hector-2710"
         bar._branch = ""
         bar._is_detached = True
-        assert bar._render_text().plain == " \u25c9 GITUX // Hector-2710/gitux \u25cf  \u2699"
+        assert bar._render_text().plain == " \u25c9 GITUX // Hector-2710/gitux \u25cf"
 
     def test_empty_repo(self) -> None:
         bar = TopAppBar()
         bar._repo_name = "gitux"
         bar._branch = "main"
         bar._wip_state = WipState.UNKNOWN
-        assert bar._render_text().plain == " \u25c9 GITUX // gitux [main] \u25cf  \u2699"
+        assert bar._render_text().plain == " \u25c9 GITUX // gitux \u2387 [main] \u25cf"
 
     def test_star_absent_when_no_default(self) -> None:
         bar = TopAppBar()
@@ -68,7 +68,7 @@ class TestOwnerCaps:
         bar._owner = "o" * 30
         bar._branch = ""
         plain = bar._render_text().plain
-        assert plain == f" \u25c9 GITUX // {'o' * _MAX_OWNER_CHARS}/gitux \u25cf  \u2699"
+        assert plain == f" \u25c9 GITUX // {'o' * _MAX_OWNER_CHARS}/gitux \u25cf"
 
     def test_repo_truncated_to_32(self) -> None:
         bar = TopAppBar()
@@ -116,7 +116,7 @@ class TestUpdateDisplay:
         bar._branch = ""
         plain = bar._render_text().plain
         assert plain.startswith(" ")
-        assert plain.endswith("  \u2699")
+        assert "\u2699" not in plain  # V5: the decorative gear dies
 
     def test_update_display_stores_fields(self) -> None:
         bar = TopAppBar()

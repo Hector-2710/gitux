@@ -1,16 +1,16 @@
 Screen {
-    background: #13131b;
+    background: #181622;
 }
 
 * {
-    color: #e4e1ed;
+    color: #e6e0f1;
 }
 
 #top-bar {
     dock: top;
     height: 1;
-    background: #1f1f27;
-    color: #e4e1ed;
+    background: #1c1a26;
+    color: #e6e0f1;
     padding: 0 1;
     text-style: bold;
 }
@@ -18,14 +18,24 @@ Screen {
 #stats-bar {
     dock: top;
     height: 3;
-    background: #0d0d15;
-    color: #c7c4d7;
-    border: round #464554;
+    background: #0f0d18;
+    color: #cbc3d7;
+    border: round #494454;
     padding: 0 1;
-    layout: horizontal;
 }
 
 #stats-left {
+    width: 1fr;
+    height: 1;
+    content-align: left middle;
+}
+
+#stats-second {
+    height: 1;
+    layout: horizontal;
+}
+
+#stats-sync {
     width: 1fr;
     height: 1;
     content-align: left middle;
@@ -59,28 +69,28 @@ Screen {
 }
 
 .block-active {
-    border: round #c0c1ff;
-    background: #0d0d15;
+    border: round #8B5CF6;
+    background: #0f0d18;
 }
 
 .block-inactive {
-    border: round #464554;
-    background: #0d0d15;
+    border: round #494454;
+    background: #0f0d18;
 }
 
 .block-header {
     height: 1;
-    background: #34343d;
+    background: #201e2a;
     padding: 0 1;
     text-style: bold;
 }
 
 .block-active .block-header {
-    color: #e4e1ed;
+    color: #e6e0f1;
 }
 
 .block-inactive .block-header {
-    color: #c7c4d7;
+    color: #cbc3d7;
 }
 
 #changed-files {
@@ -93,7 +103,7 @@ Screen {
 }
 
 .staged-section {
-    color: #c0c1ff;
+    color: #06B6D4;
 }
 
 .unstaged-section {
@@ -101,11 +111,11 @@ Screen {
 }
 
 .file-status-M { color: #ffb783; }
-.file-status-A { color: #10b981; }
+.file-status-A { color: #10B981; }
 .file-status-D { color: #ffb4ab; }
-.file-status-R { color: #c0c1ff; }
-.file-status-C { color: #c0c1ff; }
-.file-status-unknown { color: #908fa0; }
+.file-status-R { color: #06B6D4; }
+.file-status-C { color: #06B6D4; }
+.file-status-unknown { color: #958ea0; }
 
 #diff-viewer {
     height: 1fr;
@@ -115,26 +125,18 @@ Screen {
     scrollbar-visibility: hidden;
 }
 
-GituxFooter {
-    dock: bottom;
-    height: 1;
-    background: #1f1f27;
-    color: #c7c4d7;
-    padding: 0 1;
-}
-
 #commit-modal {
-    background: #0d0d15;
-    border: round #c0c1ff;
-    color: #e4e1ed;
+    background: #0f0d18;
+    border: round #8B5CF6;
+    color: #e6e0f1;
     width: 60%;
     height: 13;
 }
 
 #help-container {
-    background: #0d0d15;
-    border: round #c0c1ff;
-    color: #e4e1ed;
+    background: #0f0d18;
+    border: round #8B5CF6;
+    color: #e6e0f1;
     width: 64;
     max-width: 90%;
     max-height: 85%;
@@ -144,48 +146,51 @@ GituxFooter {
 
 #help-title {
     text-style: bold;
-    color: #e4e1ed;
+    color: #e6e0f1;
     text-align: center;
-    background: #34343d;
+    background: #201e2a;
     padding: 0 1;
     height: 1;
 }
 
 #help-body {
-    color: #e4e1ed;
+    color: #e6e0f1;
     padding: 0 1;
 }
 
 #help-body .key {
-    color: #ffb783;
+    color: #8B5CF6;
     text-style: bold;
 }
 
 #help-close-hint {
     text-style: italic;
-    color: #c7c4d7;
+    color: #cbc3d7;
     text-align: center;
     margin: 1 0 0 0;
     height: 1;
 }
 
 CommitScreen {
-    background: #13131b 85%;
+    background: #181622 85%;
     align: center middle;
-    height: 13;
+    height: 3;
 }
 
-#commit-modal-type {
-    height: 1;
-    text-align: center;
-    color: #ffb783;
-    margin: 0 0 1 0;
+#commit-modal {
+    background: #0f0d18;
+    border: round #8B5CF6;
+    color: #e6e0f1;
+    width: 50;
+    max-width: 90%;
+    height: 13;
+    padding: 0;
 }
 
 #commit-modal-title {
     text-style: bold;
-    color: #e4e1ed;
-    background: #34343d;
+    color: #e6e0f1;
+    background: #201e2a;
     padding: 0 1;
     height: 1;
     text-align: center;
@@ -193,78 +198,37 @@ CommitScreen {
 
 #commit-modal-input {
     width: 100%;
-    height: 3;
-    background: #1f1f27;
-    color: #e4e1ed;
-    border: round #464554;
+    height: 1fr;
+    background: #1c1a26;
+    color: #e6e0f1;
+    border: round #494454;
     padding: 0 1;
-    margin: 0 0 1 0;
+    margin: 1;
 }
 
 #commit-modal-input:focus {
-    border: round #c0c1ff;
+    border: round #8B5CF6;
 }
 
 #commit-modal-input .input--cursor {
-    color: #13131b;
-    background: #c0c1ff;
-}
-
-#commit-modal-buttons {
-    layout: horizontal;
-    height: 3;
-    align: center middle;
-}
-
-#commit-modal-btn-commit {
-    width: 16;
-    min-width: 16;
-    max-width: 16;
-    margin: 0 1 0 0;
-    background: #10b981;
-    color: #0d0d15;
-    text-style: bold;
-    border: none;
-}
-
-#commit-modal-btn-commit:hover {
-    background: #34d399;
-}
-
-#commit-modal-btn-commit:disabled {
-    background: #1f1f27;
-    color: #c7c4d7;
-}
-
-#commit-modal-btn-cancel {
-    width: 16;
-    min-width: 16;
-    max-width: 16;
-    background: transparent;
-    color: #908fa0;
-    text-style: bold;
-    border: none;
-}
-
-#commit-modal-btn-cancel:hover {
-    background: #1f1f27;
-    color: #e4e1ed;
+    color: #3c0091;
+    background: #8B5CF6;
 }
 
 HelpScreen {
-    background: #13131b 80%;
+    background: #181622 80%;
     align: center middle;
 }
 
 BranchScreen {
-    background: #13131b 85%;
+    background: #181622 85%;
     align: center middle;
 }
 
 #branch-modal {
-    background: #0d0d15;
-    border: round #c0c1ff;
-    color: #e4e1ed;
+    background: #0f0d18;
+    border: round #8B5CF6;
+    color: #e6e0f1;
     width: 50;
     max-width: 90%;
     height: auto;
@@ -273,44 +237,44 @@ BranchScreen {
 
 #branch-modal-title {
     text-style: bold;
-    color: #e4e1ed;
-    background: #34343d;
+    color: #e6e0f1;
+    background: #201e2a;
     padding: 0 1;
     text-align: center;
     height: 1;
 }
 
 #branch-option-list {
-    background: #1f1f27;
-    color: #e4e1ed;
-    border: round #464554;
+    background: #1c1a26;
+    color: #e6e0f1;
+    border: round #494454;
     height: auto;
     max-height: 60%;
     margin: 1 1 0 1;
 }
 
 #branch-option-list > .option-list--option-highlighted {
-    background: #3a4a5f;
-    color: #e4e1ed;
+    background: #8B5CF6;
+    color: #3c0091;
 }
 
 #branch-modal-hint {
     text-style: italic;
-    color: #c7c4d7;
+    color: #cbc3d7;
     text-align: center;
     height: 1;
     margin: 1 0 0 0;
 }
 
 CommitLogScreen {
-    background: #13131b 85%;
+    background: #181622 85%;
     align: center middle;
 }
 
 #commit-log-modal {
-    background: #0d0d15;
-    border: round #c0c1ff;
-    color: #e4e1ed;
+    background: #0f0d18;
+    border: round #8B5CF6;
+    color: #e6e0f1;
     width: 70%;
     max-width: 90%;
     height: 80%;
@@ -323,23 +287,23 @@ CommitLogScreen {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 0 1;
-    color: #e4e1ed;
+    color: #e6e0f1;
     background: transparent;
     scrollbar-visibility: hidden;
 }
 
 Toast {
-    background: #1f1f27;
-    border: round #464554;
+    background: #1c1a26;
+    border: round #494454;
     padding: 0 1;
 }
 
 Toast.-information {
-    border: round #10b981;
+    border: round #10B981;
 }
 
 Toast.-information .toast-title {
-    color: #10b981;
+    color: #10B981;
 }
 
 Toast.-error {
@@ -356,4 +320,54 @@ Toast.-warning {
 
 Toast.-warning .toast-title {
     color: #ffb783;
+}
+/* ── Error line (skeleton K2 / structure T3) ─────────────────────────────
+   Persistent contextual error strip: what happened → next action + key.
+   Red family per surface V1/V3 tokens; hidden unless an error exists.   */
+#error-line {
+    height: 1;
+    background: #3a1d1d;
+    color: #ffb4ab;
+}
+
+/* ── Commit panel (skeleton K1) ──────────────────────────────────────────
+   Permanent bottom panel: a board BLOCK like files/diff — flush with the
+   bento (no margin), border + background driven by the block-active /
+   block-inactive classes so it illuminates exactly like its siblings.
+   The editor inside is one borderless writing area on the app's input
+   background (#201e2a).                                              */
+#commit-panel {
+    height: auto;
+    padding: 0 1;
+}
+
+#commit-context {
+    color: #9c60ec;
+    text-style: bold;
+    height: 1;
+}
+
+#commit-message {
+    background: #201e2a;
+    border: none;
+    height: 4;
+    padding: 0 1;
+    margin: 0;
+}
+
+/* Neutralize Textual's focus boost: the writing area stays quiet (V2) —
+   the blinking caret alone shows where you type. (The cursor-line
+   highlight is disabled via highlight_cursor_line=False in the widget.) */
+#commit-message:focus {
+    background: #201e2a;
+    border: none;
+}
+
+#commit-affordance {
+    color: #908fa0;
+    height: 1;
+}
+
+#branch-name-input {
+    margin: 1 1 0 1;
 }

@@ -31,6 +31,34 @@ def switch_branch(name: str) -> None:
     _run(["switch", name])
 
 
+def create_branch(name: str) -> None:
+    """Create a local branch via ``git branch`` (scope S2 / skeleton K3).
+
+    Raises GitError on failure (invalid name, duplicate).
+    """
+    _run(["branch", name])
+
+
+def delete_branch(name: str) -> None:
+    """Delete a local branch via ``git branch -d`` (skeleton K3).
+
+    The safe ``-d`` refuses to delete unmerged branches — the error ladder's
+    prevention rung (structure T3) at the git level. Raises GitError on
+    failure.
+    """
+    _run(["branch", "-d", name])
+
+
+def merge_branch(name: str) -> str:
+    """Merge a branch into the current one via ``git merge --no-edit`` (K3).
+
+    Returns git's output. Raises GitError on failure or conflict — the UI
+    names the way forward (resolve conflicts, then commit).
+    """
+    result = _run(["merge", "--no-edit", name])
+    return result.stdout
+
+
 def is_detached_head() -> bool:
     """Return True if HEAD is detached."""
     try:

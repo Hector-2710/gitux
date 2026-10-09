@@ -1,4 +1,8 @@
-"""Tests for gitux.presenter.repo_presenter.RepoPresenter."""
+"""Tests for gitux.presenter.repo_presenter.RepoPresenter.
+
+Structure T4 (no silent failures): the presenter is a pass-through — real
+git failures raise ``GitError`` instead of degrading to empty data.
+"""
 
 from unittest.mock import patch
 
@@ -21,9 +25,10 @@ class TestGetCurrentBranch:
         "gitux.presenter.repo_presenter.get_current_branch",
         side_effect=GitError("not a git repo"),
     )
-    def test_returns_empty_on_error(self, mock_branch) -> None:
+    def test_propagates_git_error(self, mock_branch) -> None:
         presenter = RepoPresenter()
-        assert presenter.get_current_branch() == ""
+        with pytest.raises(GitError):
+            presenter.get_current_branch()
 
 
 class TestIsDetachedHead:
@@ -43,9 +48,10 @@ class TestIsDetachedHead:
         "gitux.presenter.repo_presenter.is_detached_head",
         side_effect=GitError("not a git repo"),
     )
-    def test_returns_false_on_error(self, mock_detached) -> None:
+    def test_propagates_git_error(self, mock_detached) -> None:
         presenter = RepoPresenter()
-        assert presenter.is_detached_head() is False
+        with pytest.raises(GitError):
+            presenter.is_detached_head()
 
 
 class TestGetRemoteStatus:
@@ -65,11 +71,12 @@ class TestGetRemoteStatus:
 
     @patch(
         "gitux.presenter.repo_presenter.get_remote_status",
-        side_effect=GitError("no remote"),
+        side_effect=GitError("git binary missing"),
     )
-    def test_returns_none_on_error(self, mock_status) -> None:
+    def test_propagates_git_error(self, mock_status) -> None:
         presenter = RepoPresenter()
-        assert presenter.get_remote_status() is None
+        with pytest.raises(GitError):
+            presenter.get_remote_status()
 
 
 class TestGetRepoInfo:
@@ -90,9 +97,10 @@ class TestGetRepoInfo:
         "gitux.presenter.repo_presenter.get_repo_info",
         side_effect=GitError("not a git repo"),
     )
-    def test_returns_none_on_error(self, mock_info) -> None:
+    def test_propagates_git_error(self, mock_info) -> None:
         presenter = RepoPresenter()
-        assert presenter.get_repo_info() is None
+        with pytest.raises(GitError):
+            presenter.get_repo_info()
 
 
 class TestGetCommitLog:
@@ -113,9 +121,10 @@ class TestGetCommitLog:
         "gitux.presenter.repo_presenter.git_get_commit_log",
         side_effect=GitError("not a git repo"),
     )
-    def test_returns_empty_on_error(self, mock_log) -> None:
+    def test_propagates_git_error(self, mock_log) -> None:
         presenter = RepoPresenter()
-        assert presenter.get_commit_log(30) == ""
+        with pytest.raises(GitError):
+            presenter.get_commit_log(30)
 
 
 class TestGetCommitDetails:
@@ -136,9 +145,10 @@ class TestGetCommitDetails:
         "gitux.presenter.repo_presenter.git_get_commit_details",
         side_effect=GitError("bad revision"),
     )
-    def test_returns_empty_on_error(self, mock_details) -> None:
+    def test_propagates_git_error(self, mock_details) -> None:
         presenter = RepoPresenter()
-        assert presenter.get_commit_details("c4474af") == ""
+        with pytest.raises(GitError):
+            presenter.get_commit_details("c4474af")
 
 
 class TestGetBranches:
@@ -156,9 +166,10 @@ class TestGetBranches:
         "gitux.presenter.repo_presenter.git_get_branches",
         side_effect=GitError("not a git repo"),
     )
-    def test_returns_empty_on_error(self, mock_branches) -> None:
+    def test_propagates_git_error(self, mock_branches) -> None:
         presenter = RepoPresenter()
-        assert presenter.get_branches() == []
+        with pytest.raises(GitError):
+            presenter.get_branches()
 
 
 class TestSwitchBranch:
@@ -190,9 +201,10 @@ class TestGetUser:
         "gitux.presenter.repo_presenter.git_get_user",
         side_effect=GitError("not a git repo"),
     )
-    def test_returns_empty_on_error(self, mock_user) -> None:
+    def test_propagates_git_error(self, mock_user) -> None:
         presenter = RepoPresenter()
-        assert presenter.get_user() == ""
+        with pytest.raises(GitError):
+            presenter.get_user()
 
 
 class TestGetHeadSummary:
@@ -209,11 +221,12 @@ class TestGetHeadSummary:
 
     @patch(
         "gitux.presenter.repo_presenter.git_get_head_summary",
-        side_effect=GitError("empty repo"),
+        side_effect=GitError("not a git repo"),
     )
-    def test_returns_none_on_error(self, mock_summary) -> None:
+    def test_propagates_git_error(self, mock_summary) -> None:
         presenter = RepoPresenter()
-        assert presenter.get_head_summary() is None
+        with pytest.raises(GitError):
+            presenter.get_head_summary()
 
 
 class TestGetDefaultBranch:
@@ -226,9 +239,10 @@ class TestGetDefaultBranch:
         "gitux.presenter.repo_presenter.git_get_default_branch",
         side_effect=GitError("not a git repo"),
     )
-    def test_returns_empty_on_error(self, mock_branch) -> None:
+    def test_propagates_git_error(self, mock_branch) -> None:
         presenter = RepoPresenter()
-        assert presenter.get_default_branch() == ""
+        with pytest.raises(GitError):
+            presenter.get_default_branch()
 
 
 class TestGetOperationState:
@@ -246,9 +260,10 @@ class TestGetOperationState:
         "gitux.presenter.repo_presenter.git_get_operation_state",
         side_effect=GitError("not a git repo"),
     )
-    def test_returns_none_on_error(self, mock_state) -> None:
+    def test_propagates_git_error(self, mock_state) -> None:
         presenter = RepoPresenter()
-        assert presenter.get_operation_state() is None
+        with pytest.raises(GitError):
+            presenter.get_operation_state()
 
 
 class TestIsMergeInProgress:
@@ -263,9 +278,10 @@ class TestIsMergeInProgress:
         "gitux.presenter.repo_presenter.git_is_merge_in_progress",
         side_effect=GitError("not a git repo"),
     )
-    def test_returns_false_on_error(self, mock_merge) -> None:
+    def test_propagates_git_error(self, mock_merge) -> None:
         presenter = RepoPresenter()
-        assert presenter.is_merge_in_progress() is False
+        with pytest.raises(GitError):
+            presenter.is_merge_in_progress()
 
 
 class TestIsRebaseInProgress:
@@ -280,6 +296,7 @@ class TestIsRebaseInProgress:
         "gitux.presenter.repo_presenter.git_is_rebase_in_progress",
         side_effect=GitError("not a git repo"),
     )
-    def test_returns_false_on_error(self, mock_rebase) -> None:
+    def test_propagates_git_error(self, mock_rebase) -> None:
         presenter = RepoPresenter()
-        assert presenter.is_rebase_in_progress() is False
+        with pytest.raises(GitError):
+            presenter.is_rebase_in_progress()
