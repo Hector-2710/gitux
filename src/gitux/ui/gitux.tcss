@@ -22,10 +22,20 @@ Screen {
     color: #cbc3d7;
     border: round #494454;
     padding: 0 1;
-    layout: horizontal;
 }
 
 #stats-left {
+    width: 1fr;
+    height: 1;
+    content-align: left middle;
+}
+
+#stats-second {
+    height: 1;
+    layout: horizontal;
+}
+
+#stats-sync {
     width: 1fr;
     height: 1;
     content-align: left middle;
@@ -113,14 +123,6 @@ Screen {
     padding: 0 1;
     background: transparent;
     scrollbar-visibility: hidden;
-}
-
-GituxFooter {
-    dock: bottom;
-    height: 1;
-    background: #1c1a26;
-    color: #cbc3d7;
-    padding: 0 1;
 }
 
 #commit-modal {
@@ -318,4 +320,54 @@ Toast.-warning {
 
 Toast.-warning .toast-title {
     color: #ffb783;
+}
+/* ── Error line (skeleton K2 / structure T3) ─────────────────────────────
+   Persistent contextual error strip: what happened → next action + key.
+   Red family per surface V1/V3 tokens; hidden unless an error exists.   */
+#error-line {
+    height: 1;
+    background: #3a1d1d;
+    color: #ffb4ab;
+}
+
+/* ── Commit panel (skeleton K1) ──────────────────────────────────────────
+   Permanent bottom panel: a board BLOCK like files/diff — flush with the
+   bento (no margin), border + background driven by the block-active /
+   block-inactive classes so it illuminates exactly like its siblings.
+   The editor inside is one borderless writing area on the app's input
+   background (#201e2a).                                              */
+#commit-panel {
+    height: auto;
+    padding: 0 1;
+}
+
+#commit-context {
+    color: #9c60ec;
+    text-style: bold;
+    height: 1;
+}
+
+#commit-message {
+    background: #201e2a;
+    border: none;
+    height: 4;
+    padding: 0 1;
+    margin: 0;
+}
+
+/* Neutralize Textual's focus boost: the writing area stays quiet (V2) —
+   the blinking caret alone shows where you type. (The cursor-line
+   highlight is disabled via highlight_cursor_line=False in the widget.) */
+#commit-message:focus {
+    background: #201e2a;
+    border: none;
+}
+
+#commit-affordance {
+    color: #908fa0;
+    height: 1;
+}
+
+#branch-name-input {
+    margin: 1 1 0 1;
 }
