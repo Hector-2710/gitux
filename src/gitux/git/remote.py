@@ -1,16 +1,22 @@
-"""Remote, push, and repository-identity commands."""
+"""Remote, push, pull, and repository-identity commands."""
 
 import subprocess
 from pathlib import Path
 from urllib.parse import urlparse
 
-from gitux.domain import PushResult, RemoteStatus, RepoInfo
+from gitux.domain import PullResult, PushResult, RemoteStatus, RepoInfo
 from gitux.git.branch import get_current_branch
 from gitux.git.exceptions import GitError
 from gitux.git.parser import parse_push_output
 from gitux.git.runner import _run
 
 _PUSH_TIMEOUT = 60
+
+_DIVERGED_MARKERS = (
+    "Not possible to fast-forward",
+    "divergent branches",
+    "diverged",
+)
 
 
 def push(remote: str = "origin", branch: str = "") -> PushResult:
@@ -44,6 +50,44 @@ def push(remote: str = "origin", branch: str = "") -> PushResult:
         failed_refs=failed_refs,
         error=result.stderr.strip() if result.returncode != 0 else None,
     )
+
+
+def pull(remote: str = "origin", branch: str = "") -> PullResult:
+    """Pull from the remote using ``git pull --ff-only`` (scope S4).
+
+    Returns a ``PullResult``; ``diverged=True`` when the pull was rejected
+    because fast-forwarding is impossible (a merge is needed) — the UI names
+    the way forward (structure T3).
+    """
+    args = ["pull", "--ff-only"]
+    if remote:
+        args.append(remote)
+    if branch:
+        args.append(branch)
+
+    try:
+        result = subprocess.run(
+            ["git", *args],
+            capture_output=True,
+            text=True,
+            timeout=_PUSH_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired:
+        return PullResult(success=False, error="Pull timed out")
+    except FileNotFoundError as exc:
+        return PullResult(success=False, error=str(exc))
+
+    if result.returncode != 0:
+        stderr = result.stderr.strip()
+        if any(marker in stderr for marker in _DIVERGED_MARKERS):
+            return PullResult(
+                success=False,
+                error="branches diverged: fast-forward not possible",
+                diverged=True,
+            )
+        return PullResult(success=False, error=stderr or "pull failed")
+
+    return PullResult(success=True)
 
 
 def _extract_repo_name(url: str) -> str:

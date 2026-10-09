@@ -75,3 +75,21 @@ def get_untracked_file_diff(path: str) -> str:
     if not any(line.startswith("@@") for line in result.stdout.splitlines()):
         return ""
     return result.stdout
+
+def staged_numstat() -> tuple[int, int]:
+    """Return (additions, deletions) of the staged diff (skeleton K6).
+
+    Via ``git diff --cached --numstat``; binary files report ``-`` and are
+    skipped. Raises GitError on failure.
+    """
+    result = _run(["diff", "--cached", "--numstat"])
+    adds = dels = 0
+    for line in result.stdout.splitlines():
+        parts = line.split("\t")
+        if len(parts) >= 2:
+            try:
+                adds += int(parts[0])
+                dels += int(parts[1])
+            except ValueError:
+                continue  # binary marker "-"
+    return adds, dels
