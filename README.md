@@ -55,13 +55,13 @@ that developer tools should be both **powerful** and **pleasant to look at**.
 | Feature | Description |
 |---------|-------------|
 | 📂 **Repository status** | Color-coded file states (staged / unstaged / modified / added / deleted) |
-| 🕘 **Commit history** | Browse commits with a visual graph and branch refs |
-| ✍️ **Stage & commit** | Stage files individually or all at once, write commit messages |
-| 🔍 **Diff viewer** | Side-by-side diffs with line numbers and syntax-aware colors |
-| 🌿 **Branch management** | Create, switch, and delete branches |
+| ⚡ **Live board** | Repository state updates on its own — no refresh key, no stale screens |
+| ✍️ **Stage & commit** | Stage files individually or all at once; multi-line commit messages in the always-ready commit panel |
+| 🔍 **Diff viewer** | Unified diffs with line numbers and syntax-aware colors |
+| 🌿 **Branch management** | Switch, create, and delete branches |
 | 🔀 **Merge** | Merge branches from the interface |
-| 🚀 **Push** | Push to remote with porcelain output parsing |
-| 📊 **Performance metrics** | Startup time and memory usage tracking |
+| 🚀 **Push & pull** | Push and pull to/from the remote with porcelain output parsing |
+| 🕘 **Commit history** | Browse commits with a visual graph and branch refs |
 
 ## 📦 Installation
 
@@ -98,16 +98,15 @@ gitux --version
 
 | Key | Action |
 |-----|--------|
-| `Tab` | Next section (Files / Diff) |
-| `↑` / `↓` or `j` / `k` | Scroll active section |
+| `Tab` | Next block (files / diff / commit) |
+| `↑` / `↓` or `j` / `k` | Move in the active block |
 | `s` / `Enter` | Stage / unstage file |
 | `a` / `A` | Stage all / unstage all files |
-| `c` | Open commit screen |
-| `Ctrl+Enter` | Create commit |
+| `Ctrl+Enter` | Create commit (from the commit block) |
 | `Ctrl+p` | Push to remote |
-| `r` | Refresh status |
-| `b` | Branches panel |
-| `l` | Commit log (overlay) |
+| `p` | Pull from remote |
+| `b` | Branches screen |
+| `l` | Commit log |
 | `?` | Show help |
 | `q` | Quit Gitux |
 
@@ -119,7 +118,7 @@ gitux --version
 | TUI | Textual | Terminal interface with CSS styling |
 | CLI | Typer | Command-line entry point |
 | Git | subprocess + git CLI | Git operations |
-| Metrics | psutil | Performance measurement |
+| Metrics | psutil | Internal benchmark harness (not user-facing) |
 
 ## 🛠️ Development
 
