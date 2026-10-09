@@ -6,7 +6,7 @@ from gitux.domain.models import FileCounts
 from gitux.domain.models import FileStatus
 from gitux.domain.models import HeadSummary
 from gitux.domain.models import OperationState
-from gitux.domain.models import PushResult
+from gitux.domain.models import PullResult, PushResult
 from gitux.domain.models import RemoteStatus
 from gitux.domain.models import RepoInfo
 from gitux.domain.models import WipState
@@ -20,6 +20,7 @@ __all__ = [
     "FileStatus",
     "HeadSummary",
     "OperationState",
+    "PullResult",
     "PushResult",
     "RemoteStatus",
     "RepoInfo",

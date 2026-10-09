@@ -64,6 +64,17 @@ class PushResult:
 
 
 @dataclass(frozen=True)
+class PullResult:
+    """Result of a git pull operation (scope S4 / structure T3)."""
+
+    success: bool
+    error: str | None = None
+    diverged: bool = False
+    """True when the pull was rejected because branches diverged
+    (fast-forward impossible — a merge is needed)."""
+
+
+@dataclass(frozen=True)
 class RepoInfo:
     """Repository identity extracted from the local clone."""
 
