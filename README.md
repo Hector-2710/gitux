@@ -28,11 +28,9 @@ doing it.
 
 ## ✨ Demo of gitux
 
-Soon
+![Demo de gitux](brag-output/brag.gif)
 
-```
-$ gitux
-```
+[Ver video completo](brag-output/brag.mp4)
 
 ## 🎯 Why gitux?
 
