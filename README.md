@@ -26,7 +26,7 @@ gitux is a terminal user interface for Git that prioritizes **design** and
 interface — so you can work with Git without leaving the terminal, and enjoy
 doing it.
 
-## ✨ Demo
+## ✨ Demo of gitux
 
 Soon
 
