@@ -28,7 +28,7 @@ doing it.
 
 ## ✨ Demo of gitux
 
-![Demo de gitux](brag-output/brag.gif)
+![Demo de gitux](brag-output/gif.gif)
 
 [Ver video completo](brag-output/brag.mp4)
 
